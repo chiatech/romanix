@@ -1,0 +1,2640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Romanix</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0a0a0a;
+    --surface2: #111411;
+    --border: #1a2e1a;
+    --accent: #39ff14;
+    --accent2: #00e676;
+    --text: #d4f5d4;
+    --muted: #4a7a4a;
+    --danger: #ff4444;
+    --success: #39ff14;
+    --radius: 6px;
+  }
+
+  body.light-theme {
+    --bg: #f4f6f4;
+    --surface: #ffffff;
+    --surface2: #eef2ee;
+    --border: #c8d8c8;
+    --accent: #1a8a00;
+    --accent2: #0a7a00;
+    --text: #1a2e1a;
+    --muted: #5a7a5a;
+    --danger: #cc2222;
+    --success: #1a8a00;
+  }
+  body.light-theme header { background: #fff; border-bottom-color: #c8d8c8; }
+  body.light-theme .logo { text-shadow: none; }
+  body.light-theme .card-value { text-shadow: none; }
+  body.light-theme thead th { text-shadow: none; }
+  body.light-theme .tag { background: #d4ecd4; color: #1a5a00; }
+  body.light-theme .count-badge { box-shadow: none; }
+  body.light-theme .cep-card { box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  body.light-theme .ind-card-title { text-shadow: none; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: #000;
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px #39ff14, 0 0 30px #39ff1466;
+  }
+  header .logo span { color: var(--accent); font-weight: 600; letter-spacing: 4px; }
+  header .subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-left: auto;
+    letter-spacing: 1px;
+  }
+
+  /* ── Upload Zone ── */
+  .upload-zone {
+    margin: 32px 28px;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--surface);
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: #0a120a;
+    box-shadow: 0 0 20px #39ff1422;
+  }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .upload-zone h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .upload-zone p {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .upload-zone .file-types {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+  }
+
+  /* ── Status bar ── */
+  #status-bar {
+    margin: 0 28px 20px;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+  #status-bar.show { display: flex; }
+  #status-bar .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.2s ease infinite;
+    flex-shrink: 0;
+  }
+  #status-bar.done .dot { background: var(--success); animation: none; }
+  #status-bar.error .dot { background: var(--danger); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── Summary Cards ── */
+  #summary {
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 0 28px 24px;
+  }
+  #summary.show { display: grid; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .card .card-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 6px;
+  }
+  .card .card-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    text-shadow: 0 0 10px #39ff1499;
+  }
+
+  /* ── Filter bar ── */
+  #filter-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin: 0 28px 16px;
+    flex-wrap: wrap;
+  }
+  #filter-bar.show { display: flex; }
+  #filter-bar input, #filter-bar select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  #filter-bar input:focus, #filter-bar select:focus { border-color: var(--accent); }
+  #filter-bar input { flex: 1; min-width: 200px; }
+  #filter-bar select option { background: var(--surface2); }
+  #filter-bar .btn-clear {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    transition: all .2s;
+  }
+  #filter-bar .btn-clear:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── Table ── */
+  #table-wrapper {
+    margin: 0 28px 40px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: none;
+  }
+  #table-wrapper.show { display: block; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead tr {
+    background: var(--surface2);
+    border-bottom: 2px solid var(--accent);
+    box-shadow: 0 2px 12px #39ff1433;
+  }
+  thead th {
+    padding: 12px 14px;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color .2s;
+    text-shadow: 0 0 8px #39ff1466;
+  }
+  thead th:hover { color: var(--accent2); }
+  thead th .sort-icon { margin-left: 4px; opacity: .4; font-size: 10px; }
+  thead th.sorted-asc .sort-icon, thead th.sorted-desc .sort-icon { opacity: 1; color: var(--accent2); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody td {
+    padding: 11px 14px;
+    color: var(--text);
+    vertical-align: top;
+    white-space: nowrap;
+  }
+  tbody td.multi {
+    white-space: normal;
+    max-width: 200px;
+    line-height: 1.5;
+  }
+  .tag {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    margin: 1px 2px 1px 0;
+    color: var(--accent2);
+  }
+  .count-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    margin-left: 5px;
+    box-shadow: 0 0 8px #39ff1488;
+  }
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .center-cell { text-align: center; }
+
+  /* ── Pagination ── */
+  #pagination {
+    display: none;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: -20px 28px 40px;
+    padding-top: 14px;
+  }
+  #pagination.show { display: flex; }
+  .page-info { font-size: 12px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-right: 8px; }
+  .page-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    transition: all .2s;
+  }
+  .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .page-btn:disabled { opacity: .3; cursor: default; }
+  .page-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; box-shadow: 0 0 10px #39ff1466; }
+
+  /* ── Empty state ── */
+  #empty {
+    display: none;
+    text-align: center;
+    padding: 60px 28px;
+    color: var(--muted);
+  }
+  #empty.show { display: block; }
+  #empty .empty-icon { font-size: 42px; margin-bottom: 12px; }
+  #empty p { font-size: 14px; }
+
+  tfoot tr {
+    background: var(--surface2);
+    border-top: 2px solid var(--accent);
+    box-shadow: 0 -2px 12px #39ff1433;
+  }
+  tfoot td {
+    padding: 11px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: 0 0 8px #39ff1466;
+    white-space: nowrap;
+  }
+  tfoot td.sum-label {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    text-shadow: none;
+  }
+
+  /* ── CEP Tables Section ── */
+  #cep-section {
+    display: none;
+    margin: 0 28px 60px;
+  }
+  #cep-section.show { display: block; }
+
+  .cep-section-header {
+    border-top: 1px solid var(--border);
+    padding: 28px 0 20px;
+  }
+  .cep-section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    text-shadow: 0 0 8px #39ff1466;
+    letter-spacing: 1px;
+  }
+
+  #cep-tables-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .cep-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .cep-card-header {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--accent);
+    padding: 10px 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: 0 1px 8px #39ff1422;
+  }
+  .cep-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .cep-card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-shadow: 0 0 8px #39ff1466;
+  }
+  .cep-meta-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cep-card-total {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .cep-card-total span {
+    color: var(--accent2);
+    font-weight: 600;
+  }
+
+  .cep-mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .cep-mini-table thead tr {
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+  }
+  .cep-mini-table thead th {
+    padding: 8px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    text-shadow: none;
+    cursor: default;
+  }
+  .cep-mini-table thead th:last-child { text-align: right; }
+  .cep-mini-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .cep-mini-table tbody tr:last-child { border-bottom: none; }
+  .cep-mini-table tbody tr:hover { background: var(--surface2); }
+  .cep-mini-table tbody td {
+    padding: 8px 14px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .cep-mini-table tbody td:last-child {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+
+  .btn-tema {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    padding: 6px 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-tema:hover { border-color: var(--accent); transform: rotate(20deg); }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-left: 24px;
+  }
+  .tab {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    padding: 7px 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+  }
+  .tab:hover { border-color: var(--accent); color: var(--accent); }
+  .tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 0 12px #39ff1455;
+  }
+
+  /* ── Indicadores Page ── */
+  #page-indicadores {
+    display: none;
+    padding: 24px 28px;
+  }
+  #page-indicadores.show { display: block; }
+
+  .ind-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 80px 0;
+    color: var(--muted);
+  }
+  .ind-empty span { font-size: 48px; }
+  .ind-empty p { font-size: 14px; }
+  .ind-empty strong { color: var(--accent); }
+
+  .ind-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .ind-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .ind-card--wide { grid-column: span 2; }
+  .ind-card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    text-shadow: 0 0 8px #39ff1433;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .ind-chart-wrap {
+    position: relative;
+    width: 100%;
+  }
+  .ind-card--wide .ind-chart-wrap { height: 320px; }
+  .ind-card:not(.ind-card--wide) .ind-chart-wrap { height: 380px; }
+
+  /* ── Paletização page ── */
+  #page-paletizacao {
+    display: none;
+    margin: 28px;
+  }
+  #page-paletizacao.show { display: block; }
+
+  .palet-search {
+    margin-bottom: 16px;
+  }
+  .palet-search input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 9px 14px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    width: 320px;
+    transition: border-color .2s;
+  }
+  .palet-search input:focus { border-color: var(--accent); }
+
+  #palet-wrapper {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  #palet-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  #palet-table thead tr {
+    background: var(--surface2);
+    border-bottom: 2px solid var(--accent);
+    box-shadow: 0 2px 12px #39ff1433;
+  }
+  #palet-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    text-shadow: 0 0 8px #39ff1466;
+  }
+  #palet-table thead th:last-child { text-align: center; }
+  #palet-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  #palet-table tbody tr:last-child { border-bottom: none; }
+  #palet-table tbody tr:hover { background: var(--surface2); }
+  #palet-table tbody td { padding: 10px 16px; color: var(--text); }
+  #palet-table tbody td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+  #palet-table tbody td:last-child {
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: 0 0 8px #39ff1466;
+  }
+  .palet-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .btn-reset {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    padding: 4px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all .2s;
+    display: none;
+  }
+  .btn-reset:hover { border-color: var(--danger); color: var(--danger); }
+  #status-bar.done .btn-reset,
+  #status-bar.error .btn-reset { display: inline-block; }
+
+  .btn-romaneio-geral {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: #000;
+    padding: 7px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+    box-shadow: 0 0 10px #39ff1455;
+  }
+  .btn-romaneio-geral:hover {
+    box-shadow: 0 0 18px #39ff1488;
+    transform: translateY(-1px);
+  }
+
+  .btn-romaneio {
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent);
+    padding: 4px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .btn-romaneio:hover {
+    background: var(--accent);
+    color: #000;
+    box-shadow: 0 0 10px #39ff1466;
+  }
+
+  /* ── Inspeção de Carregamento ── */
+  .ins-page {
+    width: 277mm;
+    padding: 10mm 12mm;
+    background: #fff;
+    margin: 0 auto 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.2);
+    font-family: Arial, sans-serif;
+    color: #000;
+  }
+  .ins-header { border: 2px solid #000; border-radius: 4px; margin-bottom: 8px; overflow: hidden; }
+  .ins-title-row {
+    background: #000; color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 10px; gap: 12px;
+  }
+  .ins-logo  { font-size: 14px; font-weight: 900; letter-spacing: 3px; color: #fff; white-space: nowrap; }
+  .ins-badge { font-size: 13px; font-weight: 900; letter-spacing: 2px; color: #39ff14; text-transform: uppercase; flex: 1; text-align: center; }
+  .ins-dt    { font-size: 18px; font-weight: 900; color: #fff; white-space: nowrap; }
+  .ins-grid {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .ins-divider { height: 1px; background: #ccc; margin: 0; }
+  .ins-field {
+    border-right: 1px solid #ccc; border-bottom: 1px solid #ccc;
+    padding: 3px 6px; display: flex; flex-direction: column;
+    flex: 1 1 auto;
+  }
+  .ins-field--xs { flex: 0 0 60px;  max-width: 60px; }
+  .ins-field--sm { flex: 0 0 100px; max-width: 100px; }
+  .ins-field--md { flex: 0 0 140px; max-width: 140px; }
+  .ins-field--lg { flex: 1 1 180px; min-width: 180px; }
+  .ins-field--xl { flex: 2 1 240px; min-width: 240px; }
+  .ins-field:last-child { border-right: none; }
+  .ins-label { font-size: 7px; font-weight: 700; text-transform: uppercase; color: #444; letter-spacing: .3px; }
+  .ins-value { font-size: 10px; font-weight: 600; color: #000; margin-top: 1px; }
+
+  /* Blocos de material */
+  .ins-blocks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .ins-block {
+    border: 2px solid #000;
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 110px;
+    max-width: 160px;
+    background: #fff;
+  }
+  .ins-paletes {
+    font-size: 20px;
+    line-height: 1.5;
+    letter-spacing: 2px;
+    word-break: break-all;
+    text-align: center;
+  }
+  .ins-mat {
+    font-size: 13px;
+    font-weight: 900;
+    color: #000;
+    text-align: center;
+    border-top: 1px solid #ccc;
+    padding-top: 5px;
+    width: 100%;
+    letter-spacing: .5px;
+  }
+  .ins-info {
+    font-size: 10px;
+    color: #666;
+    text-align: center;
+  }
+
+  .ins-fracoes {
+    margin-top: 16px;
+    border: 2px dashed #000;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .ins-fracoes-title {
+    background: #333;
+    color: #fff;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .ins-fracoes-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .ins-fracao-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+  }
+  .ins-fracao-mat  { font-size: 13px; font-weight: 900; color: #000; }
+  .ins-fracao-qtde { font-size: 13px; font-weight: 600; color: #333; }
+
+  @media print {
+    .ins-page { box-shadow: none; margin: 0; width: 100%; }
+    .ins-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .ins-title-row { background: #000 !important; }
+    .ins-logo, .ins-dt { color: #fff !important; }
+    .ins-badge { color: #39ff14 !important; }
+  }
+
+  /* ── Romaneio Modal ── */
+  #romaneio-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    z-index: 9999;
+    overflow-y: auto;
+  }
+  #romaneio-modal.open { display: block; }
+
+  #romaneio-toolbar {
+    position: sticky;
+    top: 0;
+    background: #111;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    border-bottom: 2px solid #39ff14;
+  }
+  #romaneio-toolbar span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: #39ff14;
+    flex: 1;
+  }
+  #romaneio-toolbar button {
+    background: transparent;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #fff;
+    padding: 6px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  #romaneio-toolbar button:first-of-type { border-color: #39ff14; color: #39ff14; }
+  #romaneio-toolbar button:first-of-type:hover { background: #39ff14; color: #000; }
+  #romaneio-toolbar button:last-of-type:hover { border-color: #f87171; color: #f87171; }
+
+  #romaneio-content {
+    padding: 20px;
+    background: #e0e0e0;
+  }
+
+  /* Romaneio pages */
+  .rom-page {
+    width: 277mm;
+    padding: 10mm 12mm;
+    background: #fff;
+    margin: 0 auto 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.2);
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: #000;
+  }
+  .rom-header { border: 2px solid #000; border-radius: 4px; margin-bottom: 8px; overflow: hidden; }
+  .rom-title-row {
+    background: #000; color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 10px;
+  }
+  .rom-logo { font-size: 14px; font-weight: 900; letter-spacing: 3px; color: #fff; }
+  .rom-dt   { font-size: 18px; font-weight: 900; letter-spacing: 2px; color: #fff; }
+  .rom-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .rom-grid--smart {
+    display: flex;
+    flex-wrap: wrap;
+    grid-template-columns: none;
+  }
+  .rom-divider { height: 1px; background: #ccc; margin: 0; }
+  .rom-field {
+    border-right: 1px solid #ccc; border-bottom: 1px solid #ccc;
+    padding: 3px 6px; display: flex; flex-direction: column;
+    flex: 1 1 auto;
+  }
+  .rom-field--xs { flex: 0 0 60px;  max-width: 60px; }
+  .rom-field--sm { flex: 0 0 100px; max-width: 100px; }
+  .rom-field--md { flex: 0 0 140px; max-width: 140px; }
+  .rom-field--lg { flex: 1 1 180px; min-width: 180px; }
+  .rom-field--xl { flex: 2 1 240px; min-width: 240px; }
+  .rom-field:nth-child(4n) { border-right: 1px solid #ccc; }
+  .rom-field:last-child { border-right: none; }
+  .rom-field--wide { grid-column: span 2; }
+  .rom-label { font-size: 7px; font-weight: 700; text-transform: uppercase; color: #444; letter-spacing: .3px; }
+  .rom-value { font-size: 10px; font-weight: 600; color: #000; margin-top: 1px; }
+  .rom-value--highlight { font-size: 14px; font-weight: 900; }
+  .rom-page-num { text-align: right; font-size: 10px; color: #444; margin-bottom: 5px; font-family: Arial, sans-serif; }
+  .rom-table { width: 100%; border-collapse: collapse; font-size: 14px; font-family: Arial, sans-serif; }
+  .rom-table thead tr { background: #000; }
+  .rom-table thead th {
+    padding: 7px 8px; text-align: left; color: #fff;
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .3px; border: 1px solid #000;
+  }
+  .rom-table thead th.col-mat  { width: 120px; text-align: center; }
+  .rom-table thead th.col-denom { width: 200px; max-width: 200px; }
+  .rom-table thead th.col-num   { width: 80px; text-align: center; }
+  .rom-table thead th.col-blank { width: 70px; }
+  .rom-table tbody tr:nth-child(even) { background: #f5f5f5; }
+  .rom-table tbody td { padding: 8px 8px; border: 1px solid #ccc; vertical-align: middle; color: #000; font-size: 14px; }
+  .rom-table tbody td.col-mat   { text-align: center; font-weight: 900; font-size: 16px; color: #000; }
+  .rom-table tbody td.col-denom { font-size: 9px; width: 200px; max-width: 200px; white-space: normal; word-break: break-word; overflow: hidden; }
+  .rom-center { text-align: center; font-weight: 700; color: #000; }
+  .rom-blank  { min-width: 70px; }
+  .rom-obs {
+    margin-top: 14px;
+    border: 1px solid #000;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .rom-obs-inner {
+    display: flex;
+    flex: 1;
+  }
+  .rom-obs-title {
+    background: #000; color: #fff;
+    padding: 5px 10px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .rom-obs-body {
+    flex: 1;
+    min-height: 70px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #000;
+    border-right: 1px solid #000;
+  }
+  .rom-stamp {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 200px;
+    min-height: 70px;
+    flex-shrink: 0;
+  }
+  .rom-stamp-title {
+    background: #000; color: #fff;
+    width: 100%;
+    text-align: center;
+    padding: 5px 6px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .rom-stamp-box {
+    flex: 1;
+    width: 100%;
+    min-height: 70px;
+  }
+
+  @media print {
+    @page { size: A4 landscape; margin: 10mm; }
+    body.printing-romaneio > *:not(#romaneio-modal),
+    body.printing-inspecao > *:not(#romaneio-modal) { display: none !important; }
+    #romaneio-modal {
+      position: static !important;
+      overflow: visible !important;
+      background: #fff !important;
+      display: block !important;
+    }
+    #romaneio-toolbar { display: none !important; }
+    #romaneio-content { padding: 0 !important; background: #fff !important; }
+    .rom-page {
+      box-shadow: none !important;
+      margin: 0 !important;
+      width: 100% !important;
+      page-break-after: always;
+    }
+    .rom-page:last-child { page-break-after: avoid; }
+    .rom-table thead tr,
+    .rom-title-row,
+    .rom-obs-title,
+    .rom-stamp-title { background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rom-table thead th,
+    .rom-logo, .rom-dt,
+    .rom-obs-title,
+    .rom-stamp-title { color: #fff !important; }
+  }
+
+  .btn-export {
+    background: transparent;
+    border: 1px solid #00e5ff;
+    border-radius: var(--radius);
+    color: #00e5ff;
+    padding: 7px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .btn-export:hover { background: #00e5ff; color: #000; box-shadow: 0 0 18px #00e5ff66; }
+
+  /* ── KPI Cards ── */
+  .ind-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .ind-kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ind-kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .ind-kpi--mat::before  { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .ind-kpi--cep::before  { background: #00e5ff;       box-shadow: 0 0 8px #00e5ff; }
+  .ind-kpi--tot::before  { background: #ff6ec7;       box-shadow: 0 0 8px #ff6ec7; }
+  .ind-kpi-label  { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+  .ind-kpi-value  { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 700; color: var(--accent); }
+  .ind-kpi--cep .ind-kpi-value  { color: #00e5ff; }
+  .ind-kpi--tot .ind-kpi-value  { color: #ff6ec7; }
+  .ind-kpi-sub    { font-size: 11px; color: var(--muted); }
+
+  /* ── CEP card fade+slide animation ── */
+  @keyframes cepCardIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .cep-card {
+    animation: cepCardIn .35s ease both;
+  }
+
+  .btn-inspecao-geral {
+    background: transparent;
+    border: 1px solid #ff6ec7;
+    border-radius: var(--radius);
+    color: #ff6ec7;
+    padding: 7px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .btn-inspecao-geral:hover { background: #ff6ec7; color: #000; box-shadow: 0 0 18px #ff6ec766; }
+
+  .btn-inspecao {
+    background: transparent;
+    border: 1px solid #ff6ec7;
+    border-radius: var(--radius);
+    color: #ff6ec7;
+    padding: 4px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .btn-inspecao:hover { background: #ff6ec7; color: #000; box-shadow: 0 0 10px #ff6ec766; }
+
+  /* ── Cursor Neon ── */
+  * { cursor: none !important; }
+  #cursor-arrow {
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999;
+    top: 0; left: 0;
+    transform-origin: 4px 2px;
+    filter: drop-shadow(0 0 4px #39ff14) drop-shadow(0 0 10px #39ff14);
+    transition: filter .2s;
+  }
+  #cursor-arrow svg path {
+    fill: #39ff14;
+    transition: fill .2s;
+  }
+  #cursor-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99997;
+  }
+  body.light-theme #cursor-arrow {
+    filter: drop-shadow(0 0 4px #1a8a00) drop-shadow(0 0 8px #1a8a00);
+  }
+  body.light-theme #cursor-arrow svg path { fill: #1a8a00; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 18px 28px;
+    margin-top: 40px;
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .5px;
+  }
+  footer span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+</style>
+</head>
+<body>
+<canvas id="cursor-canvas"></canvas>
+<div id="cursor-arrow">
+  <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 2L2 19L7 14L10.5 22L13 21L9.5 13L17 13L2 2Z"/>
+  </svg>
+</div>
+
+<header>
+  <div class="logo">ROMANI<span>X</span></div>
+  <nav class="tabs">
+    <button class="tab active" id="tab-embarques">Embarques</button>
+    <button class="tab" id="tab-indicadores">Indicadores</button>
+    <button class="tab" id="tab-paletizacao">Paletização</button>
+  </nav>
+  <div class="subtitle">// Dashboard de Embarques</div>
+  <button id="btn-tema" class="btn-tema" title="Alternar tema">🌙</button>
+</header>
+
+<!-- Upload -->
+<div class="upload-zone" id="upload-zone">
+  <input type="file" id="file-input" accept=".csv,.xlsx,.xls" />
+  <span class="upload-icon">📦</span>
+  <h3>Arraste ou clique para importar sua tabela</h3>
+  <p>Selecione o arquivo com os dados de embarque</p>
+  <div class="file-types">
+    <span class="badge">.CSV</span>
+    <span class="badge">.XLSX</span>
+    <span class="badge">.XLS</span>
+  </div>
+</div>
+
+<!-- Status -->
+<div id="status-bar"><div class="dot"></div><span id="status-text">Processando...</span><button class="btn-reset" id="btn-reset">↺ Trocar arquivo</button></div>
+
+<!-- Summary cards -->
+<div id="summary">
+  <div class="card"><div class="card-label">Embarques</div><div class="card-value" id="card-total">0</div></div>
+  <div class="card"><div class="card-label">N° de Transporte</div><div class="card-value" id="card-dt">—</div></div>
+  <div class="card"><div class="card-label">Remessas únicas</div><div class="card-value" id="card-remessas">0</div></div>
+  <div class="card"><div class="card-label">CEPs únicos</div><div class="card-value" id="card-ceps">0</div></div>
+  <div class="card"><div class="card-label">Peso total (t)</div><div class="card-value" id="card-cubagem">0</div></div>
+  <div class="card"><div class="card-label">Total fardos/cx</div><div class="card-value" id="card-pedidos">0</div></div>
+</div>
+
+<!-- Filter bar -->
+<div id="filter-bar">
+  <input type="text" id="search-input" placeholder="🔍  Buscar por qualquer campo..." />
+  <select id="remessa-filter"><option value="">Todas as Remessas</option></select>
+  <select id="cep-filter"><option value="">Todos os CEPs</option></select>
+  <select id="material-filter"><option value="">Todos os Materiais</option></select>
+  <button class="btn-clear" onclick="clearFilters()">✕ Limpar filtros</button>
+  <button class="btn-export" id="btn-export">📥 Exportar Excel</button>
+  <button class="btn-romaneio-geral" id="btn-romaneio-geral">📋 Romaneio Geral</button>
+  <button class="btn-inspecao-geral" id="btn-inspecao-geral">🔍 Inspeção Geral</button>
+</div>
+
+<!-- Table -->
+<div id="table-wrapper">
+  <table id="main-table">
+    <thead>
+      <tr id="thead-row"></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+    <tfoot id="tfoot"></tfoot>
+  </table>
+</div>
+
+<!-- Empty -->
+<div id="empty">
+  <div class="empty-icon">🔍</div>
+  <p>Nenhum resultado encontrado para os filtros aplicados.</p>
+</div>
+
+<!-- Pagination -->
+<div id="pagination">
+  <span class="page-info" id="page-info"></span>
+  <button class="page-btn" id="btn-prev" onclick="changePage(-1)">← Anterior</button>
+  <div id="page-numbers"></div>
+  <button class="page-btn" id="btn-next" onclick="changePage(1)">Próxima →</button>
+</div>
+
+<!-- CEP Tables Section -->
+<div id="cep-section">
+  <div class="cep-section-header">
+    <span class="cep-section-title">// Materiais por Código Postal</span>
+  </div>
+  <div id="cep-tables-container"></div>
+</div>
+
+<!-- Indicadores Page -->
+<div id="page-indicadores">
+  <div class="ind-empty" id="ind-empty">
+    <span>📊</span>
+    <p>Carregue um arquivo na aba <strong>Embarques</strong> para ver os indicadores.</p>
+  </div>
+  <div id="ind-content" style="display:none">
+    <div class="ind-kpi-row" id="ind-kpi-row"></div>
+    <div class="ind-grid">
+      <div class="ind-card ind-card--wide">
+        <div class="ind-card-title">📦 Top Materiais por Quantidade</div>
+        <div class="ind-chart-wrap"><canvas id="chart-materiais"></canvas></div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-card-title">📍 Quantidade por CEP</div>
+        <div class="ind-chart-wrap"><canvas id="chart-cep"></canvas></div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-card-title">📊 Paletes Fechados vs Frações por Material</div>
+        <div class="ind-chart-wrap"><canvas id="chart-paletes"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Paletização Page -->
+<div id="page-paletizacao">
+  <div class="palet-search">
+    <input type="text" id="palet-search" placeholder="🔍  Buscar material ou produto..." />
+  </div>
+  <div class="palet-count" id="palet-count"></div>
+  <div id="palet-wrapper">
+    <table id="palet-table">
+      <thead><tr><th>Material</th><th>Produto</th><th>Paletização</th></tr></thead>
+      <tbody id="palet-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Romaneio Modal -->
+<div id="romaneio-modal">
+  <div id="romaneio-toolbar" class="no-print">
+    <span id="romaneio-title"></span>
+    <button id="btn-imprimir-romaneio">🖨 Imprimir / Salvar PDF</button>
+    <button id="btn-fechar-romaneio">✕ Fechar</button>
+  </div>
+  <div id="romaneio-content"></div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// COLUMN MAPPING — exact header names in the file
+// ════════════════════════════════════════════════
+const COL = {
+  centro:          'Centro',
+  shipmentId:      'Shipment ID',
+  remessa:         'Nr. Remessa/Recebimento',
+  agendamento:     'Data Agendamento',
+  nrTransporte:    'Nº transporte',
+  pesoLiquido:     'Peso líquido',
+  volumeAcumulado: 'Volume acumulado',
+  qtdeRemessa:     'Qtde Remessa',
+  nomeCliente:     'Nome Cliente/Fornecedor',
+  nomeMotorista:   'Nome Motorista',
+  placaSimples:    'Placa Simples Veículo',
+  placaComposicao: 'Placa Composição',
+  nomeTransportadora: 'Nome Transportadora',
+  material:        'Material',
+  denominacao:     'Denominação',
+  local:           'Local',
+  cep:             'Código postal',
+};
+
+// ════════════════════════════════════════════════
+// DISPLAY COLUMNS CONFIG
+// ════════════════════════════════════════════════
+const DISPLAY_COLS = [
+  { key: 'centro',             label: 'Centro' },
+  { key: 'shipmentId',         label: 'Shipment' },
+  { key: 'remessa',            label: 'Remessa' },
+  { key: 'agendamento',        label: 'Agendamento' },
+  { key: 'nrTransporte',       label: 'DT' },
+  { key: 'material',           label: 'Material' },
+  { key: 'denominacao',        label: 'Denominação' },
+  { key: 'pesoLiquido',        label: 'Peso (t)' },
+  { key: 'volumeAcumulado',    label: 'Cubagem do Veículo' },
+  { key: 'qtdeRemessa',        label: 'Pedido Fardos/Caixas' },
+  { key: 'nomeCliente',        label: 'Cliente' },
+  { key: 'nomeMotorista',      label: 'Motorista' },
+  { key: 'placaSimples',       label: 'Placa Cavalo' },
+  { key: 'placaComposicao',    label: 'Placa Composição' },
+  { key: 'nomeTransportadora', label: 'Transportadora' },
+  { key: 'cep',                label: 'CEP' },
+];
+
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+let allGroups = [];
+let filtered  = [];
+let rawDataRows = [];
+let globalIdx   = {};     // column index map, set during buildDashboard
+let sortCol   = null;
+let sortDir   = 1;
+let page      = 1;
+const PAGE_SIZE = 50;
+
+function getVal(row, key) {
+  const i = globalIdx[key];
+  return (i >= 0 && row[i] !== undefined && row[i] !== null) ? String(row[i]).trim() : '';
+}
+
+// ════════════════════════════════════════════════
+// FILE UPLOAD
+// ════════════════════════════════════════════════
+const uploadZone = document.getElementById('upload-zone');
+const fileInput  = document.getElementById('file-input');
+
+document.getElementById('btn-imprimir-romaneio').addEventListener('click', () => {
+  const isInspecao = !!document.querySelector('.ins-page');
+  const cls = isInspecao ? 'printing-inspecao' : 'printing-romaneio';
+  document.body.classList.add(cls);
+  window.print();
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove(cls);
+  }, { once: true });
+});
+
+document.getElementById('btn-fechar-romaneio').addEventListener('click', () => {
+  document.getElementById('romaneio-modal').classList.remove('open');
+});
+
+document.getElementById('btn-tema').addEventListener('click', () => {
+  const isLight = document.body.classList.toggle('light-theme');
+  document.getElementById('btn-tema').textContent = isLight ? '☀️' : '🌙';
+  if (document.getElementById('page-indicadores').classList.contains('show')) {
+    renderIndicadores();
+  }
+});
+document.getElementById('btn-export').addEventListener('click', exportarExcel);
+document.getElementById('btn-romaneio-geral').addEventListener('click', gerarRomaneioGeral);
+document.getElementById('btn-inspecao-geral').addEventListener('click', gerarInspecaoGeral);
+document.getElementById('tab-embarques').addEventListener('click', () => switchTab('embarques'));
+document.getElementById('tab-indicadores').addEventListener('click', () => switchTab('indicadores'));
+document.getElementById('tab-paletizacao').addEventListener('click', () => switchTab('paletizacao'));
+document.getElementById('palet-search').addEventListener('input', filterPalet);
+document.getElementById('btn-reset').addEventListener('click', resetDashboard);
+
+uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+});
+
+function setStatus(msg, state='loading') {
+  const bar = document.getElementById('status-bar');
+  bar.className = 'show ' + state;
+  document.getElementById('status-text').textContent = msg;
+}
+
+async function processFile(file) {
+  setStatus('Lendo arquivo: ' + file.name);
+  const ext = file.name.split('.').pop().toLowerCase();
+  try {
+    let rows;
+    if (ext === 'csv') {
+      const text = await file.text();
+      rows = parseCSV(text);
+    } else {
+      rows = await parseXLSX(file);
+    }
+    if (!rows || rows.length < 2) throw new Error('Arquivo sem dados suficientes.');
+    buildDashboard(rows);
+    setStatus(`✓  ${file.name} carregado com sucesso — ${rows.length - 1} linhas processadas`, 'done');
+  } catch(err) {
+    setStatus('Erro: ' + err.message, 'error');
+  }
+}
+
+// ── CSV parser ──
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  // detect separator
+  const sep = text.includes(';') && !text.includes(',') ? ';' : ',';
+  return lines.map(line => {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === sep && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
+}
+
+// ── XLSX parser ──
+function parseXLSX(file) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array', cellDates: false });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+        res(data);
+      } catch(err) { rej(err); }
+    };
+    reader.onerror = () => rej(new Error('Falha ao ler o arquivo.'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ════════════════════════════════════════════════
+// BUILD DASHBOARD
+// ════════════════════════════════════════════════
+function buildDashboard(rows) {
+  const headers = rows[0].map(h => String(h).trim());
+
+  // Map column names to indices (global)
+  globalIdx = {};
+  Object.entries(COL).forEach(([key, name]) => {
+    const i = headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+    globalIdx[key] = i;
+  });
+
+  // Parse all data rows — no grouping, one object per raw row
+  const dataRows = rows.slice(1, -1).filter(r => r.some(c => c !== '' && c !== null && c !== undefined));
+
+  allGroups = dataRows.map(row => ({
+    centro:             getVal(row, 'centro'),
+    shipmentId:         getVal(row, 'shipmentId'),
+    remessa:            getVal(row, 'remessa'),
+    agendamento:        formatDate(getVal(row, 'agendamento')),
+    nrTransporte:       getVal(row, 'nrTransporte'),
+    material:           getVal(row, 'material'),
+    denominacao:        getVal(row, 'denominacao'),
+    pesoLiquido:        parseFloat(String(getVal(row, 'pesoLiquido')).replace(',', '.')) / 1000 || 0,
+    volumeAcumulado:    parseFloat(String(getVal(row, 'volumeAcumulado')).replace(',', '.')) || 0,
+    qtdeRemessa:        Number(String(getVal(row, 'qtdeRemessa')).replace(',', '.')) || 0,
+    nomeCliente:        getVal(row, 'nomeCliente'),
+    nomeMotorista:      getVal(row, 'nomeMotorista'),
+    placaSimples:       getVal(row, 'placaSimples'),
+    placaComposicao:    getVal(row, 'placaComposicao'),
+    nomeTransportadora: getVal(row, 'nomeTransportadora'),
+    cep:                getVal(row, 'cep'),
+  }));
+
+  rawDataRows = dataRows;
+
+  filtered = [...allGroups];
+  page = 1;
+  buildFilters();
+  buildTableHeader();
+  renderSummary();
+  renderTable();
+  renderCepTables();
+
+  document.getElementById('summary').classList.add('show');
+  document.getElementById('filter-bar').classList.add('show');
+  document.getElementById('table-wrapper').classList.add('show');
+  document.getElementById('pagination').classList.add('show');
+  document.getElementById('cep-section').classList.add('show');
+  document.getElementById('upload-zone').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════
+// DATE FORMATTING
+// ════════════════════════════════════════════════
+function formatDate(val) {
+  if (!val) return '';
+  // Excel serial number (número inteiro ou decimal)
+  const n = Number(val);
+  if (!isNaN(n) && n > 40000 && n < 60000) {
+    const date = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+    const d = String(date.getUTCDate()).padStart(2, '0');
+    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const y = date.getUTCFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  // yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}/.test(String(val))) {
+    const [y, m, d] = String(val).split(/[-T]/);
+    return `${d}/${m}/${y}`;
+  }
+  // MM/DD/YYYY string — inverte para DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(String(val))) {
+    const [a, b, y] = String(val).split('/');
+    const year = y.length === 2 ? '20' + y : y;
+    return `${b.padStart(2,'0')}/${a.padStart(2,'0')}/${year}`;
+  }
+  return String(val);
+}
+
+// ════════════════════════════════════════════════
+// FILTERS
+// ════════════════════════════════════════════════
+function buildFilters() {
+  const remessas  = [...new Set(allGroups.map(g => g.remessa).filter(Boolean))].sort();
+  const ceps      = [...new Set(allGroups.map(g => g.cep).filter(Boolean))].sort();
+  const materiais = [...new Set(allGroups.map(g => String(parseInt(g.material, 10) || g.material).trim()).filter(Boolean))].sort();
+
+  const remessaSel  = document.getElementById('remessa-filter');
+  remessaSel.innerHTML = '<option value="">Todas as Remessas</option>';
+  remessas.forEach(r => remessaSel.innerHTML += `<option>${r}</option>`);
+
+  const cepSel = document.getElementById('cep-filter');
+  cepSel.innerHTML = '<option value="">Todos os CEPs</option>';
+  ceps.forEach(c => cepSel.innerHTML += `<option>${c}</option>`);
+
+  const matSel = document.getElementById('material-filter');
+  matSel.innerHTML = '<option value="">Todos os Materiais</option>';
+  materiais.forEach(m => matSel.innerHTML += `<option>${m}</option>`);
+
+  document.getElementById('search-input').addEventListener('input', applyFilters);
+  remessaSel.addEventListener('change', applyFilters);
+  cepSel.addEventListener('change', applyFilters);
+  matSel.addEventListener('change', applyFilters);
+}
+
+function applyFilters() {
+  const q        = document.getElementById('search-input').value.toLowerCase();
+  const remessa  = document.getElementById('remessa-filter').value;
+  const cep      = document.getElementById('cep-filter').value;
+  const material = document.getElementById('material-filter').value;
+
+  filtered = allGroups.filter(g => {
+    if (remessa  && g.remessa !== remessa) return false;
+    if (cep      && g.cep !== cep)         return false;
+    if (material) {
+      const matNorm = String(parseInt(String(g.material).trim(), 10) || g.material).trim();
+      if (matNorm !== material) return false;
+    }
+    if (q) {
+      const haystack = [
+        g.centro, g.shipmentId, g.remessa, g.agendamento,
+        g.nrTransporte, g.material, g.denominacao,
+        g.nomeCliente, g.nomeMotorista, g.placaSimples,
+        g.placaComposicao, g.nomeTransportadora, g.cep,
+      ].join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+  page = 1;
+  renderSummary();
+  renderTable();
+}
+
+function clearFilters() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('remessa-filter').value = '';
+  document.getElementById('cep-filter').value = '';
+  document.getElementById('material-filter').value = '';
+  applyFilters();
+}
+
+// ════════════════════════════════════════════════
+// SUMMARY CARDS
+// ════════════════════════════════════════════════
+function renderSummary() {
+  const totalRemessas = new Set(filtered.map(g => g.remessa).filter(Boolean)).size;
+  const totalCeps     = new Set(filtered.map(g => g.cep).filter(Boolean)).size;
+  const totalCubagem  = filtered.reduce((a, g) => a + g.pesoLiquido, 0);
+  const totalPedidos  = filtered.reduce((a, g) => a + g.qtdeRemessa, 0);
+
+  document.getElementById('card-total').textContent    = new Set(filtered.map(g => g.shipmentId).filter(Boolean)).size;
+  document.getElementById('card-dt').textContent       = filtered[0]?.nrTransporte || '—';
+  document.getElementById('card-remessas').textContent = totalRemessas.toLocaleString('pt-BR');
+  document.getElementById('card-ceps').textContent     = totalCeps.toLocaleString('pt-BR');
+  document.getElementById('card-cubagem').textContent  = totalCubagem.toFixed(3).replace('.', ',');
+  document.getElementById('card-pedidos').textContent  = totalPedidos.toLocaleString('pt-BR');
+}
+
+// ════════════════════════════════════════════════
+// TABLE HEADER
+// ════════════════════════════════════════════════
+function buildTableHeader() {
+  const tr = document.getElementById('thead-row');
+  tr.innerHTML = '';
+  DISPLAY_COLS.forEach(col => {
+    const th = document.createElement('th');
+    th.dataset.key = col.key;
+    th.innerHTML = col.label + ' <span class="sort-icon">⇅</span>';
+    th.addEventListener('click', () => sortBy(col.key, th));
+    tr.appendChild(th);
+  });
+}
+
+// ════════════════════════════════════════════════
+// SORT
+// ════════════════════════════════════════════════
+function sortBy(key, th) {
+  if (sortCol === key) sortDir *= -1;
+  else { sortCol = key; sortDir = 1; }
+
+  document.querySelectorAll('thead th').forEach(h => {
+    h.classList.remove('sorted-asc', 'sorted-desc');
+    h.querySelector('.sort-icon').textContent = '⇅';
+  });
+  th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+  th.querySelector('.sort-icon').textContent = sortDir === 1 ? '↑' : '↓';
+
+  filtered.sort((a, b) => {
+    let va = a[key], vb = b[key];
+    if (Array.isArray(va)) va = va.join(',');
+    if (Array.isArray(vb)) vb = vb.join(',');
+    if (typeof va === 'number') return (va - vb) * sortDir;
+    return String(va).localeCompare(String(vb), 'pt-BR') * sortDir;
+  });
+  page = 1;
+  renderTable();
+}
+
+// ════════════════════════════════════════════════
+// RENDER TABLE
+// ════════════════════════════════════════════════
+function renderTable() {
+  const tbody      = document.getElementById('tbody');
+  const tfoot      = document.getElementById('tfoot');
+  const emptyEl    = document.getElementById('empty');
+  const tableWrap  = document.getElementById('table-wrapper');
+  const paginationEl = document.getElementById('pagination');
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    tfoot.innerHTML = '';
+    emptyEl.classList.add('show');
+    tableWrap.classList.remove('show');
+    paginationEl.classList.remove('show');
+    return;
+  }
+  emptyEl.classList.remove('show');
+  tableWrap.classList.add('show');
+  paginationEl.classList.add('show');
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const start      = (page - 1) * PAGE_SIZE;
+  const pageData   = filtered.slice(start, start + PAGE_SIZE);
+
+  tbody.innerHTML = pageData.map(g =>
+    `<tr>${DISPLAY_COLS.map(col => renderCell(g, col.key)).join('')}</tr>`
+  ).join('');
+
+  // ── Tfoot: soma das colunas numéricas do filtered completo ──
+  const sumQtde  = filtered.reduce((a, g) => a + g.qtdeRemessa, 0);
+  const sumPeso  = filtered.reduce((a, g) => a + g.pesoLiquido, 0);
+  const sumVol   = filtered.reduce((a, g) => a + g.volumeAcumulado, 0);
+
+  const tfootCells = DISPLAY_COLS.map(col => {
+    if (col.key === 'centro') return `<td class="sum-label">∑ TOTAL</td>`;
+    if (col.key === 'qtdeRemessa') return `<td class="mono center-cell">${sumQtde.toLocaleString('pt-BR')}</td>`;
+    if (col.key === 'pesoLiquido') return `<td class="mono center-cell">${sumPeso.toFixed(3).replace('.', ',')} t</td>`;
+    if (col.key === 'volumeAcumulado') return `<td class="mono center-cell">${Math.round(sumVol).toLocaleString('pt-BR')}</td>`;
+    return `<td></td>`;
+  }).join('');
+
+  tfoot.innerHTML = `<tr>${tfootCells}</tr>`;
+
+  renderPagination(totalPages);
+}
+
+function renderCell(g, key) {
+  switch(key) {
+    case 'pesoLiquido':
+      return `<td class="mono center-cell">${g.pesoLiquido.toFixed(3).replace('.', ',')} t</td>`;
+    case 'volumeAcumulado':
+      return `<td class="mono center-cell">${Math.round(g.volumeAcumulado).toLocaleString('pt-BR')}</td>`;
+    case 'qtdeRemessa':
+      return `<td class="mono center-cell">${g.qtdeRemessa.toLocaleString('pt-BR')}</td>`;
+    case 'agendamento':
+    case 'nrTransporte':
+    case 'shipmentId':
+    case 'remessa':
+    case 'cep':
+      return `<td class="mono">${escHtml(String(g[key] ?? ''))}</td>`;
+    default:
+      return `<td>${escHtml(String(g[key] ?? ''))}</td>`;
+  }
+}
+
+// ════════════════════════════════════════════════
+// CEP TABLES
+// ════════════════════════════════════════════════
+function renderCepTables() {
+  const container = document.getElementById('cep-tables-container');
+  container.innerHTML = '';
+
+  // Build map: CEP → { matMap, matDenom, locals, remessas, + header fields }
+  const cepMap = new Map();
+
+  rawDataRows.forEach(row => {
+    const cep      = getVal(row, 'cep')      || '(sem CEP)';
+    const material = String(getVal(row, 'material') || '').trim().replace(/\.0+$/, '') || '(sem material)';
+    const qtde     = Number(String(getVal(row, 'qtdeRemessa')).replace(',', '.')) || 0;
+    const local    = getVal(row, 'local');
+    const remessa  = getVal(row, 'remessa');
+    const denom    = getVal(row, 'denominacao');
+
+    if (!cepMap.has(cep)) {
+      cepMap.set(cep, {
+        matMap:   new Map(),
+        matDenom: new Map(),
+        locals:   new Set(),
+        remessas: new Set(),
+        // header fields — pega do primeiro row deste CEP
+        centro:        getVal(row, 'centro'),
+        shipmentId:    getVal(row, 'shipmentId'),
+        agendamento:   formatDate(getVal(row, 'agendamento')),
+        nrTransporte:  getVal(row, 'nrTransporte'),
+        nomeCliente:   getVal(row, 'nomeCliente'),
+        nomeMotorista: getVal(row, 'nomeMotorista'),
+        placaSimples:  getVal(row, 'placaSimples'),
+        placaComposicao: getVal(row, 'placaComposicao'),
+        nomeTransportadora: getVal(row, 'nomeTransportadora'),
+        pesoLiquido:   0,
+        volumeAcumulado: 0,
+        totalQtde:     0,
+      });
+    }
+    const entry = cepMap.get(cep);
+    entry.matMap.set(material, (entry.matMap.get(material) || 0) + qtde);
+    if (denom && !entry.matDenom.has(material)) entry.matDenom.set(material, denom);
+    if (local)   entry.locals.add(local);
+    if (remessa) entry.remessas.add(remessa);
+  });
+
+  // Compute totals from ALL rows (not per-CEP) for header
+  const totalPeso   = allGroups.reduce((a, g) => a + g.pesoLiquido, 0);
+  const totalVol    = allGroups.reduce((a, g) => a + g.volumeAcumulado, 0);
+  const totalQtdeAll = allGroups.reduce((a, g) => a + g.qtdeRemessa, 0);
+
+  // Sort CEPs alphabetically
+  const sortedCeps = [...cepMap.keys()].sort();
+
+  sortedCeps.forEach((cep, idx) => {
+    const entry = cepMap.get(cep);
+    const { matMap, matDenom, locals, remessas } = entry;
+    const materials  = [...matMap.entries()].sort((a, b) => b[1] - a[1]);
+    const totalQtde  = materials.reduce((acc, [, q]) => acc + q, 0);
+    const localStr   = [...locals].join(', ')  || '—';
+    const remessaStr = [...remessas].join(', ') || '—';
+
+    const rows = materials.map(([mat, qtde]) => `
+      <tr>
+        <td>${escHtml(String(Number(mat) || mat))}</td>
+        <td>${qtde.toLocaleString('pt-BR')}</td>
+      </tr>
+    `).join('');
+
+    // Romaneio data object
+    const romaneioData = {
+      cep,
+      local:              localStr,
+      centro:             entry.centro,
+      shipmentId:         entry.shipmentId,
+      agendamento:        entry.agendamento,
+      nrTransporte:       entry.nrTransporte,
+      nomeCliente:        entry.nomeCliente,
+      nomeMotorista:      entry.nomeMotorista,
+      placaSimples:       entry.placaSimples,
+      placaComposicao:    entry.placaComposicao,
+      nomeTransportadora: entry.nomeTransportadora,
+      remessas:           [...remessas],
+      pesoLiquido:        totalPeso,
+      volumeAcumulado:    totalVol,
+      totalQtde:          totalQtdeAll,
+      materials:          materials.map(([mat, qtde]) => ({
+        mat,
+        denom: matDenom.get(mat) || '',
+        qtde,
+      })),
+    };
+
+    const card = document.createElement('div');
+    card.className = 'cep-card';
+    card.style.animationDelay = `${idx * 60}ms`;
+    card.innerHTML = `
+      <div class="cep-card-header">
+        <div class="cep-card-meta">
+          <span class="cep-card-title">📍 ${escHtml(cep)}</span>
+          <span class="cep-meta-item">🏢 ${escHtml(localStr)}</span>
+          <span class="cep-meta-item">📦 ${escHtml(remessaStr)}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="cep-card-total">Total: <span>${totalQtde.toLocaleString('pt-BR')}</span></span>
+          <button class="btn-romaneio">🖨 Romaneio</button>
+          <button class="btn-inspecao">🔍 Inspeção</button>
+        </div>
+      </div>
+      <table class="cep-mini-table">
+        <thead><tr><th>Material</th><th>Qtde</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+
+    card.querySelector('.btn-romaneio').addEventListener('click', () => gerarRomaneio(romaneioData));
+    card.querySelector('.btn-inspecao').addEventListener('click', () => gerarInspecao(romaneioData));
+    container.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════════════
+// PALETIZAÇÃO
+// ════════════════════════════════════════════════
+const PALET_DATA = [
+  ['20081464','HFDX142 W C BR 30x12x06x72 NE MAX PURE',45],
+  ['20081465','HFDX147 W C BR 30x12x06x72 NE MIMMO',45],
+  ['20081466','HFDX142 W C BR 30x16x04x64 NE MAX PURE',54],
+  ['20081467','HFDX147 W C BR 30x16x04x64 NE MIMMO',54],
+  ['20081469','HFDX147 W C BR 30x24x03x72 NE MIMMO',42],
+  ['20081471','HFDX147 W N BR 30x04x16x64 NE MIMMO',54],
+  ['20081480','HFSX190 W C BR 30x12x06x72 NE MIMMO',45],
+  ['20081481','HFDX142 W C BR 30x24x03x72 NE MAX PURE',42],
+  ['20081482','HFDX142 W N BR 30x04x16x64 NE MAX PURE',54],
+  ['20081579','HFDX142 W C BR 30x40x02x80 NE MAX PURE',36],
+  ['20082219','HFDX142 W C BR 30x40x02x80 NE ROYAL CARE',36],
+  ['20086999','HFDX147 W C BR 30x08x08x64 NE MIMMO L8P7',54],
+  ['20089651','HFTX151 W N BR 20x04x16x64 NE MIMMO',54],
+  ['20089652','HFTX151 W N BR 20x12x04x48 NE MIMMO',70],
+  ['20089653','HFTX151 W N BR 20x24x02x48 NE MIMMO',72],
+  ['20091834','TOAX430 2R 60F 2X12 SCALA PLUS REG',64],
+  ['20091835','TOAX430 2R 100F 2X12 SCALA PLUS MPICOTE',64],
+  ['20091836','TOAX430 3R 120F 3X6 SCALA PLUS MEGA',48],
+  ['20095269','HFDX142 W C BR 30x16x04x64 NE FOFOPEL',54],
+  ['20097397','HFTX151 W N BR 20x12x06x72 NE MIMMO',45],
+  ['20097399','HFTX151 W N BR 20x24x03x72 NE MIMMO',36],
+  ['20103075','HFDX147 W N BR 40x06x10x60 NE MIMMO',54],
+  ['20103677','HFDX142 W N BR 40x06x10x60 NE MAX PURE',54],
+  ['20104309','LENCO FAC KLEENEX BLS FT 10X04X72 L4P3',60],
+  ['20104310','LENCO FAC KLEENEX BLS FT 10X12X4 UNIT',250],
+  ['20104311','PANO SCOTT DURAMAX 48X01X12 ANTIBAC',88],
+  ['20104312','PANO SCOTT DURAMAX 58X01X24 AZUL',48],
+  ['20104313','PANO SCOTT DURAMAX 58X01X24 BRANCO',48],
+  ['20104404','HFDX153 W N BR 20x04x12x48 NEVE T.SEDA',72],
+  ['20104405','HFDX153 W C BR 20x12x05x60 NEVE T.SEDA',60],
+  ['20104407','HFDX153 W C BR 20x18x04x72 NEVE T.SEDA',60],
+  ['20104408','HFDX153 W N BR 30x04x16x64 NEVE T.SEDA',54],
+  ['20104409','HFDX153 W C BR 30x12x06x72 NEVE T.SEDA',45],
+  ['20104410','HFDX153 W C BR 30x16x04x64 NEVE T.SEDA',54],
+  ['20104411','HFDX153 W C BR 30x18x04x72 NEVE T.SEDA',45],
+  ['20104412','HFDX153 W C BR 30x24x03x72 NEVE T.SEDA',42],
+  ['20104413','HFDX153 W C BR 30x32x02x64 NEVE T.SEDA',44],
+  ['20104414','HFTX153 W N BR 20x04x16x64 NEVE SUP.',54],
+  ['20104415','HFTX153 W C BR 20x12x06x72 NEVE SUP.',45],
+  ['20104416','HFTX153 W C BR 20x16x04x64 NEVE SUP.',54],
+  ['20104417','HFTX153 W C BR 20x18x04x72 NEVE SUP.',45],
+  ['20104418','HFTX153 W C BR 20x24x03x72 NEVE SUP.',42],
+  ['20104419','HFTX153 W C BR 20x32x02x64 NEVE SUP.',36],
+  ['20104420','LENCO FAC KLEENEX BX FD 50X50',63],
+  ['20104421','LENCO FAC KLEENEX BX FD 50X60 L60P50',63],
+  ['20104422','LENCO FAC KLEENEX BX FD 100X40 L100P80',56],
+  ['20104423','LENCO FAC KLEENEX BX FD 150X32 LMPN',54],
+  ['20104424','PANO SCOTT DURAMAX 58X02X12 BRANCO',48],
+  ['20104425','PANO SCOTT DURAMAX 58X03X08 BRANCO',48],
+  ['20104426','GUARD. SCOTT DIA A DIA FS 6X12X50 P',40],
+  ['20104427','GUARD. SCOTT DIA A DIA FS 6X12X50 G',24],
+  ['20104429','GUARD. SCOTT GRANDHOTEL FD 9X9X50 P',40],
+  ['20104430','GUARD. SCOTT GRANDHOTEL FD 8X9X50 G',25],
+  ['20105277','HFDX153 W N BR 30x40x02x80 NEVE T.SEDA',36],
+  ['20106005','HFDX153 W C BR 40x06x10x60 NEVE T.SEDA',54],
+  ['20106704','HFQX145 W C BR 20x12x04X48 NEVE UCOMFORT',54],
+  ['20106705','HFQX145 W N BR 20x04x12x48 NEVE UCOMFORT',54],
+  ['90004710','LENÇO UMEDECIDO MIMMO 40x24',95],
+  ['90004852','LENCO UMED. NEVE SUPREME 48X24',75],
+  ['90004853','LENCO UMED. NEVE TOQ SEDA 48X24',75],
+  ['90004854','LENCO UMED. NEVE TOQSEDA 48X4X6 L4P3',75],
+  ['20109594','LENCO FAC MIMMO BX FD 100X40',56],
+  ['20109735','THTS150 W C BR 20x12x04x48 NEVE CARE 3P',36],
+  ['20109736','THTS150 W C BR 20X6X10X60 NEVE CARE 3P',36],
+  ['20108365','LENCO FAC MIMMO BLS FT 08X06X72',36],
+  ['30241471','HFDX147 W N BR 30x04x16x64 NE MIMMO',54],
+];
+
+function renderPaletTable(data) {
+  const tbody = document.getElementById('palet-tbody');
+  tbody.innerHTML = data.map(([mat, prod, palet]) => `
+    <tr>
+      <td>${escHtml(mat)}</td>
+      <td>${escHtml(prod)}</td>
+      <td>${palet}</td>
+    </tr>
+  `).join('');
+  document.getElementById('palet-count').textContent =
+    `// ${data.length} produto${data.length !== 1 ? 's' : ''}`;
+}
+
+function filterPalet() {
+  const q = document.getElementById('palet-search').value.toLowerCase();
+  const result = q
+    ? PALET_DATA.filter(([mat, prod]) =>
+        mat.toLowerCase().includes(q) || prod.toLowerCase().includes(q))
+    : PALET_DATA;
+  renderPaletTable(result);
+}
+
+// ════════════════════════════════════════════════
+// TAB SWITCHING
+// ════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+
+  const embarqueEls = [
+    'upload-zone', 'status-bar', 'summary', 'filter-bar',
+    'table-wrapper', 'empty', 'pagination', 'cep-section'
+  ];
+  embarqueEls.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = tab === 'embarques' ? '' : 'none';
+  });
+
+  const paletEl = document.getElementById('page-paletizacao');
+  const indEl   = document.getElementById('page-indicadores');
+
+  if (tab === 'paletizacao') {
+    paletEl.classList.add('show');
+    indEl.classList.remove('show');
+    renderPaletTable(PALET_DATA);
+  } else if (tab === 'indicadores') {
+    indEl.classList.add('show');
+    paletEl.classList.remove('show');
+    renderIndicadores();
+  } else {
+    paletEl.classList.remove('show');
+    indEl.classList.remove('show');
+  }
+}
+
+
+// ════════════════════════════════════════════════
+// RESET
+// ════════════════════════════════════════════════
+function resetDashboard() {
+  // Limpa estado
+  allGroups   = [];
+  filtered    = [];
+  rawDataRows = [];
+  globalIdx   = {};
+  sortCol     = null;
+  sortDir     = 1;
+  page        = 1;
+
+  // Limpa tabela e tfoot
+  document.getElementById('tbody').innerHTML  = '';
+  document.getElementById('tfoot').innerHTML  = '';
+  document.getElementById('thead-row').innerHTML = '';
+  document.getElementById('cep-tables-container').innerHTML = '';
+
+  // Esconde seções
+  document.getElementById('summary').classList.remove('show');
+  document.getElementById('filter-bar').classList.remove('show');
+  document.getElementById('table-wrapper').classList.remove('show');
+  document.getElementById('pagination').classList.remove('show');
+  document.getElementById('cep-section').classList.remove('show');
+  document.getElementById('empty').classList.remove('show');
+
+  // Esconde status bar
+  document.getElementById('status-bar').className = '';
+
+  // Reseta input de arquivo e mostra upload zone
+  document.getElementById('file-input').value = '';
+  document.getElementById('upload-zone').style.display = '';
+}
+
+
+// ════════════════════════════════════════════════
+// EXPORTAR EXCEL
+// ════════════════════════════════════════════════
+function exportarExcel() {
+  if (!filtered.length) return;
+
+  const cols = [
+    { key: 'centro',             label: 'Centro' },
+    { key: 'shipmentId',         label: 'Shipment' },
+    { key: 'remessa',            label: 'Remessa' },
+    { key: 'agendamento',        label: 'Agendamento' },
+    { key: 'nrTransporte',       label: 'DT' },
+    { key: 'material',           label: 'Material' },
+    { key: 'denominacao',        label: 'Denominação' },
+    { key: 'pesoLiquido',        label: 'Peso (t)' },
+    { key: 'volumeAcumulado',    label: 'Cubagem do Veículo' },
+    { key: 'qtdeRemessa',        label: 'Pedido Fardos/Caixas' },
+    { key: 'nomeCliente',        label: 'Cliente' },
+    { key: 'nomeMotorista',      label: 'Motorista' },
+    { key: 'placaSimples',       label: 'Placa Cavalo' },
+    { key: 'placaComposicao',    label: 'Placa Composição' },
+    { key: 'nomeTransportadora', label: 'Transportadora' },
+    { key: 'cep',                label: 'CEP' },
+  ];
+
+  const data = [
+    cols.map(c => c.label),
+    ...filtered.map(g => cols.map(c => {
+      if (c.key === 'pesoLiquido')     return +g.pesoLiquido.toFixed(3);
+      if (c.key === 'volumeAcumulado') return Math.round(g.volumeAcumulado);
+      return g[c.key] ?? '';
+    })),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Embarques');
+  XLSX.writeFile(wb, `romanix_embarques_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ════════════════════════════════════════════════
+// INSPEÇÃO DE CARREGAMENTO
+// ════════════════════════════════════════════════
+function gerarInspecao(d) {
+  const paletMap = new Map();
+  PALET_DATA.forEach(([mat,,pal]) => {
+    const s = String(mat).trim();
+    paletMap.set(s, pal);
+    paletMap.set(String(parseInt(s, 10)), pal);
+  });
+
+  const items = d.materials
+    .map(({ mat, qtde }) => {
+      const matStr  = String(parseInt(String(mat).trim(), 10)) || String(mat).trim();
+      const pal     = paletMap.get(String(mat).trim()) || paletMap.get(matStr) || null;
+      const fechados = pal ? Math.floor(qtde / pal) : 0;
+      return { mat: matStr, qtde, pal, fechados };
+    })
+    .filter(r => r.fechados > 0)
+    .sort((a, b) => b.fechados - a.fechados);
+
+  if (!items.length) {
+    alert('Nenhum material com paletes fechados neste CEP.');
+    return;
+  }
+
+  const remessaStr   = d.remessas.join(', ') || '—';
+  const remessaCount = d.remessas.length;
+
+  const blocksHtml = items.map(({ mat, fechados }) => {
+    const paletes = Array(fechados).fill('📦').join('');
+    return `
+      <div class="ins-block">
+        <div class="ins-paletes">${paletes}</div>
+        <div class="ins-mat">${mat}</div>
+        <div class="ins-info">${fechados} palete${fechados > 1 ? 's' : ''}</div>
+      </div>`;
+  }).join('');
+
+  // Materiais com frações (sem paletes fechados ou com resto)
+  const fracoesItems = d.materials
+    .map(({ mat, qtde }) => {
+      const matStr  = String(parseInt(String(mat).trim(), 10)) || String(mat).trim();
+      const pal     = paletMap.get(String(mat).trim()) || paletMap.get(matStr) || null;
+      const fracao  = pal ? (qtde % pal) : qtde;
+      return { mat: matStr, fracao };
+    })
+    .filter(r => r.fracao > 0)
+    .sort((a, b) => b.fracao - a.fracao);
+
+  const fracoesHtml = fracoesItems.length ? `
+    <div class="ins-fracoes">
+      <div class="ins-fracoes-title">+ Unidades Avulsas (Frações)</div>
+      <div class="ins-fracoes-list">
+        ${fracoesItems.map(r => `
+          <div class="ins-fracao-item">
+            <span class="ins-fracao-mat">${r.mat}</span>
+            <span class="ins-fracao-qtde">+${r.fracao.toLocaleString('pt-BR')} un.</span>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const content = `
+    <div class="ins-header">
+      <div class="ins-title-row">
+        <div class="ins-logo">🚛 ROMANIX</div>
+        <div class="ins-badge">INSPEÇÃO DE CARREGAMENTO</div>
+        <div class="ins-dt">DT: ${escHtml(d.nrTransporte)}</div>
+      </div>
+      <div class="ins-grid">
+        <div class="ins-field ins-field--xs"><span class="ins-label">Centro</span><span class="ins-value">${escHtml(d.centro)}</span></div>
+        <div class="ins-field ins-field--sm"><span class="ins-label">Shipment</span><span class="ins-value">${escHtml(d.shipmentId)}</span></div>
+        <div class="ins-field ins-field--sm"><span class="ins-label">Agendamento</span><span class="ins-value">${escHtml(d.agendamento)}</span></div>
+        <div class="ins-field ins-field--lg"><span class="ins-label">CEP</span><span class="ins-value">${escHtml(d.cep)}</span></div>
+        <div class="ins-field ins-field--lg"><span class="ins-label">Local</span><span class="ins-value">${escHtml(d.local || '—')}</span></div>
+        <div class="ins-field ins-field--xl"><span class="ins-label">Remessas (${remessaCount})</span><span class="ins-value">${escHtml(remessaStr)}</span></div>
+        <div class="ins-field ins-field--lg"><span class="ins-label">Cliente</span><span class="ins-value">${escHtml(d.nomeCliente)}</span></div>
+      </div>
+      <div class="ins-divider"></div>
+      <div class="ins-grid">
+        <div class="ins-field ins-field--md"><span class="ins-label">Motorista</span><span class="ins-value">${escHtml(d.nomeMotorista)}</span></div>
+        <div class="ins-field ins-field--sm"><span class="ins-label">Placa Cavalo</span><span class="ins-value">${escHtml(d.placaSimples)}</span></div>
+        <div class="ins-field ins-field--sm"><span class="ins-label">Composição</span><span class="ins-value">${escHtml(d.placaComposicao)}</span></div>
+        <div class="ins-field ins-field--xl"><span class="ins-label">Transportadora</span><span class="ins-value">${escHtml(d.nomeTransportadora)}</span></div>
+      </div>
+    </div>
+    <div class="ins-blocks">${blocksHtml}</div>
+    ${fracoesHtml}`;
+
+  document.getElementById('romaneio-title').textContent =
+    `Inspeção — DT ${d.nrTransporte} / CEP ${d.cep}`;
+  document.getElementById('romaneio-content').innerHTML = `<div class="ins-page">${content}</div>`;
+  document.getElementById('romaneio-modal').classList.add('open');
+  document.getElementById('romaneio-modal').scrollTop = 0;
+}
+
+// ════════════════════════════════════════════════
+// ROMANEIO
+// ════════════════════════════════════════════════
+function gerarRomaneio(d) {
+  const ROWS_PER_PAGE = 12;
+
+  // paletMap com tripla chave: string original, string trimada, inteiro sem zeros
+  const paletMap = new Map();
+  PALET_DATA.forEach(([mat,,pal]) => {
+    const s = String(mat).trim();
+    const n = String(parseInt(s, 10));
+    paletMap.set(s, pal);
+    paletMap.set(n, pal);
+  });
+
+  function getPal(mat) {
+    const s = String(mat).trim().replace(/\.0+$/, '');
+    const n = String(parseInt(s, 10));
+    return paletMap.get(s) ?? paletMap.get(n) ?? null;
+  }
+
+  // totalQtde do CEP (soma dos materiais deste CEP)
+  const cepTotalQtde = d.materials.reduce((a, m) => a + m.qtde, 0);
+
+  // Prepare rows with palet calc
+  const tableRows = d.materials.map(({ mat, denom, qtde }) => {
+    const matStr   = String(parseInt(String(mat).trim(), 10)) || String(mat).trim();
+    const pal      = getPal(mat);
+    const fechados = pal !== null ? Math.floor(qtde / pal) : '—';
+    const fracoes  = pal !== null ? (qtde % pal)           : '—';
+    return { mat: matStr, denom, qtde, fechados, fracoes };
+  });
+
+  const remessaStr   = d.remessas.join(', ') || '—';
+  const remessaCount = d.remessas.length;
+
+  function buildHeader() {
+    return `
+    <div class="rom-header">
+      <div class="rom-title-row">
+        <div class="rom-logo">🚛 ROMANIX</div>
+        <div class="rom-dt">DT: ${escHtml(d.nrTransporte)}</div>
+      </div>
+      <div class="rom-grid rom-grid--smart">
+        <div class="rom-field rom-field--xs"><span class="rom-label">Centro</span><span class="rom-value">${escHtml(d.centro)}</span></div>
+        <div class="rom-field rom-field--sm"><span class="rom-label">Shipment</span><span class="rom-value">${escHtml(d.shipmentId)}</span></div>
+        <div class="rom-field rom-field--sm"><span class="rom-label">Agendamento</span><span class="rom-value">${escHtml(d.agendamento)}</span></div>
+        <div class="rom-field rom-field--lg"><span class="rom-label">CEP</span><span class="rom-value">${escHtml(d.cep)}</span></div>
+        <div class="rom-field rom-field--lg"><span class="rom-label">Local</span><span class="rom-value">${escHtml(d.local)}</span></div>
+        <div class="rom-field rom-field--xl"><span class="rom-label">Remessas (${remessaCount})</span><span class="rom-value">${escHtml(remessaStr)}</span></div>
+        <div class="rom-field rom-field--sm"><span class="rom-label">Peso Líquido</span><span class="rom-value">${d.pesoLiquido.toFixed(3).replace('.', ',')} t</span></div>
+        <div class="rom-field rom-field--sm"><span class="rom-label">Cubagem</span><span class="rom-value">${Math.round(d.volumeAcumulado).toLocaleString('pt-BR')}</span></div>
+        <div class="rom-field rom-field--sm"><span class="rom-label">Total Fardos</span><span class="rom-value rom-value--highlight">${cepTotalQtde.toLocaleString('pt-BR')}</span></div>
+        <div class="rom-field rom-field--lg"><span class="rom-label">Cliente</span><span class="rom-value">${escHtml(d.nomeCliente)}</span></div>
+      </div>
+      <div class="rom-divider"></div>
+      <div class="rom-grid rom-grid--smart">
+        <div class="rom-field rom-field--md"><span class="rom-label">Motorista</span><span class="rom-value">${escHtml(d.nomeMotorista)}</span></div>
+        <div class="rom-field rom-field--sm"><span class="rom-label">Placa Cavalo</span><span class="rom-value">${escHtml(d.placaSimples)}</span></div>
+        <div class="rom-field rom-field--sm"><span class="rom-label">Composição</span><span class="rom-value">${escHtml(d.placaComposicao)}</span></div>
+        <div class="rom-field rom-field--xl"><span class="rom-label">Transportadora</span><span class="rom-value">${escHtml(d.nomeTransportadora)}</span></div>
+      </div>
+    </div>`;
+  }
+
+  function buildTableHead() {
+    return `
+    <table class="rom-table">
+      <thead>
+        <tr>
+          <th class="col-mat">Material</th>
+          <th class="col-denom">Produto (Denominação)</th>
+          <th class="col-num">Qtde</th>
+          <th class="col-num">Paletes Fechados</th>
+          <th class="col-num">Frações</th>
+          <th class="col-blank">Check Conferente</th>
+          <th class="col-blank">Corte</th>
+        </tr>
+      </thead>
+      <tbody>`;
+  }
+
+  const pages = [];
+  for (let i = 0; i < tableRows.length; i += ROWS_PER_PAGE) {
+    pages.push(tableRows.slice(i, i + ROWS_PER_PAGE));
+  }
+  if (pages.length === 0) pages.push([]);
+
+  const totalPages = pages.length;
+
+  const pagesHtml = pages.map((pageRows, pi) => {
+    const isLastPage = pi === totalPages - 1;
+    const bodyRows = pageRows.map(r => `
+      <tr>
+        <td class="col-mat">${escHtml(r.mat)}</td>
+        <td class="col-denom">${escHtml(r.denom)}</td>
+        <td class="rom-center">${r.qtde.toLocaleString('pt-BR')}</td>
+        <td class="rom-center">${r.fechados}</td>
+        <td class="rom-center">${r.fracoes}</td>
+        <td class="rom-blank"></td>
+        <td class="rom-blank"></td>
+      </tr>`).join('');
+
+    const obs = isLastPage ? `
+      <div class="rom-obs">
+        <div class="rom-obs-inner">
+          <div style="display:flex;flex-direction:column;flex:1;border-right:1px solid #000;">
+            <div class="rom-obs-title">Observações</div>
+            <div class="rom-obs-body"></div>
+          </div>
+          <div class="rom-stamp">
+            <div class="rom-stamp-title">Carimbo de Corte</div>
+            <div class="rom-stamp-box"></div>
+          </div>
+        </div>
+      </div>` : '';
+
+    return `
+    <div class="rom-page">
+      ${buildHeader()}
+      <div class="rom-page-num">Página ${pi + 1} de ${totalPages}</div>
+      ${buildTableHead()}
+        ${bodyRows}
+      </tbody>
+    </table>
+    ${obs}
+  </div>`;
+  }).join('');
+
+  document.getElementById('romaneio-title').textContent =
+    `Romaneio — DT ${d.nrTransporte} / CEP ${d.cep}`;
+  document.getElementById('romaneio-content').innerHTML = pagesHtml;
+  document.getElementById('romaneio-modal').classList.add('open');
+  document.getElementById('romaneio-modal').scrollTop = 0;
+}
+
+// ════════════════════════════════════════════════
+// CURSOR NEON + PARTÍCULAS
+// ════════════════════════════════════════════════
+(function() {
+  const arrow  = document.getElementById('cursor-arrow');
+  const canvas = document.getElementById('cursor-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  let mx = -100, my = -100;
+  const particles = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX;
+    my = e.clientY;
+    arrow.style.transform = `translate(${mx}px, ${my}px)`;
+
+    const isLight = document.body.classList.contains('light-theme');
+    const color   = isLight ? '#1a8a00' : '#39ff14';
+    particles.push({
+      x: mx + 4, y: my + 4,
+      vx: (Math.random() - .5) * 1.8,
+      vy: (Math.random() - .5) * 1.8 - .3,
+      life: 1,
+      decay: .045 + Math.random() * .04,
+      size: 1.5 + Math.random() * 2,
+      color,
+    });
+  });
+
+  // Rotaciona levemente ao clicar
+  document.addEventListener('mousedown', () => {
+    arrow.style.filter = 'drop-shadow(0 0 8px #39ff14) drop-shadow(0 0 20px #39ff14)';
+  });
+  document.addEventListener('mouseup', () => {
+    arrow.style.filter = 'drop-shadow(0 0 4px #39ff14) drop-shadow(0 0 10px #39ff14)';
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x    += p.vx;
+      p.y    += p.vy;
+      p.vy   += .05;
+      p.life -= p.decay;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+
+      ctx.save();
+      ctx.globalAlpha = p.life * .8;
+      ctx.fillStyle   = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur  = 6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  animate();
+})();
+
+const chartInstances = {};
+
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+function neonPalette(n) {
+  const base = ['#39ff14','#00e5ff','#ff6ec7','#ffe600','#ff4500','#a259ff','#00ff99','#ff9f00','#00bfff','#ff3c3c'];
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(base[i % base.length]);
+  return out;
+}
+
+const CHART_DEFAULTS = {
+  color: '#b0b0b0',
+  font: { family: "'IBM Plex Mono', monospace", size: 11 },
+};
+
+function chartOpts(extra = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#b0b0b0', font: CHART_DEFAULTS.font, boxWidth: 12 } },
+      tooltip: { bodyFont: CHART_DEFAULTS.font, titleFont: CHART_DEFAULTS.font },
+    },
+    scales: {
+      x: { ticks: { color: '#b0b0b0', font: CHART_DEFAULTS.font }, grid: { color: '#1e1e1e' } },
+      y: { ticks: { color: '#b0b0b0', font: CHART_DEFAULTS.font }, grid: { color: '#1e1e1e' } },
+    },
+    ...extra,
+  };
+}
+
+function renderIndicadores() {
+  if (!rawDataRows.length) return;
+
+  document.getElementById('ind-empty').style.display   = 'none';
+  document.getElementById('ind-content').style.display = 'block';
+
+  const paletMap = new Map();
+  PALET_DATA.forEach(([mat,,pal]) => {
+    const s = String(mat).trim();
+    paletMap.set(s, pal);
+    paletMap.set(String(parseInt(s, 10)), pal);
+  });
+
+  // ── Agrupa dados ──────────────────────────────
+  const matQtde    = new Map();
+  const cepQtde    = new Map();
+
+  rawDataRows.forEach(row => {
+    const mat    = String(getVal(row, 'material') || '').trim().replace(/\.0+$/, '') || '(sem)';
+    const matNum = String(parseInt(mat, 10)) || mat;
+    const cep    = getVal(row, 'cep')    || '(sem CEP)';
+    const qtde   = Number(String(getVal(row, 'qtdeRemessa')).replace(',', '.')) || 0;
+
+    matQtde.set(matNum,  (matQtde.get(matNum)   || 0) + qtde);
+    cepQtde.set(cep,     (cepQtde.get(cep)      || 0) + qtde);
+  });
+
+  // ── 1. Top Materiais ──────────────────────────
+  destroyChart('materiais');
+
+  // ── KPI Cards de destaque ─────────────────────
+  const kpiMat     = [...matQtde.entries()].sort((a,b) => b[1]-a[1])[0];
+  const kpiCep     = [...cepQtde.entries()].sort((a,b) => b[1]-a[1])[0];
+  const totalGeral = [...matQtde.values()].reduce((a,b) => a+b, 0);
+  document.getElementById('ind-kpi-row').innerHTML = `
+    <div class="ind-kpi ind-kpi--mat">
+      <div class="ind-kpi-label">🏆 Material mais expedido</div>
+      <div class="ind-kpi-value">${kpiMat ? kpiMat[0] : '—'}</div>
+      <div class="ind-kpi-sub">${kpiMat ? kpiMat[1].toLocaleString('pt-BR') + ' unidades' : ''}</div>
+    </div>
+    <div class="ind-kpi ind-kpi--cep">
+      <div class="ind-kpi-label">📍 CEP com maior volume</div>
+      <div class="ind-kpi-value">${kpiCep ? kpiCep[0] : '—'}</div>
+      <div class="ind-kpi-sub">${kpiCep ? kpiCep[1].toLocaleString('pt-BR') + ' unidades' : ''}</div>
+    </div>
+    <div class="ind-kpi ind-kpi--tot">
+      <div class="ind-kpi-label">📦 Total geral expedido</div>
+      <div class="ind-kpi-value">${totalGeral.toLocaleString('pt-BR')}</div>
+      <div class="ind-kpi-sub">unidades no embarque</div>
+    </div>`;
+  const topMat = [...matQtde.entries()].sort((a,b) => b[1]-a[1]).slice(0, 15);
+  const ctx1 = document.getElementById('chart-materiais').getContext('2d');
+  chartInstances['materiais'] = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: topMat.map(([m]) => m),
+      datasets: [{ label: 'Qtde', data: topMat.map(([,q]) => q),
+        backgroundColor: neonPalette(topMat.length), borderRadius: 4, borderSkipped: false }],
+    },
+    options: { ...chartOpts(), indexAxis: 'y',
+      scales: {
+        x: { ticks: { color: '#b0b0b0', font: CHART_DEFAULTS.font }, grid: { color: '#1e1e1e' } },
+        y: { ticks: { color: '#39ff14', font: { ...CHART_DEFAULTS.font, weight: '700' } }, grid: { color: '#1e1e1e' } },
+      },
+      plugins: { legend: { display: false }, tooltip: { bodyFont: CHART_DEFAULTS.font, titleFont: CHART_DEFAULTS.font } },
+    },
+  });
+
+  // ── 2. Qtde por CEP ───────────────────────────
+  destroyChart('cep');
+  const topCep = [...cepQtde.entries()].sort((a,b) => b[1]-a[1]).slice(0, 12);
+  const ctx2 = document.getElementById('chart-cep').getContext('2d');
+  chartInstances['cep'] = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: topCep.map(([c]) => c),
+      datasets: [{ label: 'Qtde', data: topCep.map(([,q]) => q),
+        backgroundColor: '#00e5ff', borderRadius: 4, borderSkipped: false }],
+    },
+    options: chartOpts({ plugins: { legend: { display: false }, tooltip: { bodyFont: CHART_DEFAULTS.font, titleFont: CHART_DEFAULTS.font } } }),
+  });
+
+  // ── 6. Paletes Fechados vs Frações ────────────
+  destroyChart('paletes');
+  const paletArr = [...matQtde.entries()]
+    .map(([mat, qtde]) => {
+      const pal = paletMap.get(mat) || paletMap.get(String(parseInt(mat,10))) || null;
+      if (!pal) return null;
+      return { mat, fechados: Math.floor(qtde / pal), fracoes: qtde % pal };
+    })
+    .filter(Boolean)
+    .sort((a,b) => (b.fechados + b.fracoes/100) - (a.fechados + a.fracoes/100))
+    .slice(0, 12);
+
+  const ctx6 = document.getElementById('chart-paletes').getContext('2d');
+  chartInstances['paletes'] = new Chart(ctx6, {
+    type: 'bar',
+    data: {
+      labels: paletArr.map(r => r.mat),
+      datasets: [
+        { label: 'Paletes Fechados', data: paletArr.map(r => r.fechados), backgroundColor: '#39ff14', borderRadius: 4, borderSkipped: false },
+        { label: 'Frações',          data: paletArr.map(r => r.fracoes),  backgroundColor: '#ff6ec7', borderRadius: 4, borderSkipped: false },
+      ],
+    },
+    options: chartOpts({ scales: {
+      x: { stacked: false, ticks: { color: '#39ff14', font: { ...CHART_DEFAULTS.font, weight: '700' } }, grid: { color: '#1e1e1e' } },
+      y: { stacked: false, ticks: { color: '#b0b0b0', font: CHART_DEFAULTS.font }, grid: { color: '#1e1e1e' } },
+    }}),
+  });
+}
+
+function gerarRomaneioGeral() {
+  if (!rawDataRows.length) return;
+
+  // Consolidar materiais de TODAS as linhas (sem filtro de CEP)
+  const matMap   = new Map();
+  const denomMap = new Map();
+
+  rawDataRows.forEach(row => {
+    const mat   = String(getVal(row, 'material') || '').trim().replace(/\.0+$/, '') || '(sem material)';
+    const qtde  = Number(String(getVal(row, 'qtdeRemessa')).replace(',', '.')) || 0;
+    const denom = getVal(row, 'denominacao');
+    matMap.set(mat, (matMap.get(mat) || 0) + qtde);
+    if (denom && !denomMap.has(mat)) denomMap.set(mat, denom);
+  });
+
+  // Campos de cabeçalho da primeira linha
+  const first = rawDataRows[0];
+  const g = key => getVal(first, key);
+
+  const remessas  = [...new Set(rawDataRows.map(r => getVal(r, 'remessa')).filter(Boolean))];
+  const ceps      = [...new Set(rawDataRows.map(r => getVal(r, 'cep')).filter(Boolean))].sort();
+  const locais    = [...new Set(rawDataRows.map(r => getVal(r, 'local')).filter(Boolean))].sort();
+  const totalPeso = allGroups.reduce((a, r) => a + r.pesoLiquido, 0);
+  const totalVol  = allGroups.reduce((a, r) => a + r.volumeAcumulado, 0);
+  const totalQtde = allGroups.reduce((a, r) => a + r.qtdeRemessa, 0);
+
+  const materials = [...matMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([mat, qtde]) => ({ mat, denom: denomMap.get(mat) || '', qtde }));
+
+  gerarRomaneio({
+    cep:                ceps.join(', ') || '—',
+    local:              locais.join(', ') || '—',
+    centro:             g('centro'),
+    shipmentId:         g('shipmentId'),
+    agendamento:        formatDate(g('agendamento')),
+    nrTransporte:       g('nrTransporte'),
+    nomeCliente:        g('nomeCliente'),
+    nomeMotorista:      g('nomeMotorista'),
+    placaSimples:       g('placaSimples'),
+    placaComposicao:    g('placaComposicao'),
+    nomeTransportadora: g('nomeTransportadora'),
+    remessas,
+    pesoLiquido:        totalPeso,
+    volumeAcumulado:    totalVol,
+    totalQtde,
+    materials,
+  });
+}
+
+function gerarInspecaoGeral() {
+  if (!rawDataRows.length) return;
+
+  const matMap   = new Map();
+  const denomMap = new Map();
+
+  rawDataRows.forEach(row => {
+    const mat   = String(getVal(row, 'material') || '').trim().replace(/\.0+$/, '') || '(sem material)';
+    const qtde  = Number(String(getVal(row, 'qtdeRemessa')).replace(',', '.')) || 0;
+    const denom = getVal(row, 'denominacao');
+    matMap.set(mat, (matMap.get(mat) || 0) + qtde);
+    if (denom && !denomMap.has(mat)) denomMap.set(mat, denom);
+  });
+
+  const first = rawDataRows[0];
+  const g = key => getVal(first, key);
+  const remessas = [...new Set(rawDataRows.map(r => getVal(r, 'remessa')).filter(Boolean))];
+  const ceps     = [...new Set(rawDataRows.map(r => getVal(r, 'cep')).filter(Boolean))].sort();
+  const locais   = [...new Set(rawDataRows.map(r => getVal(r, 'local')).filter(Boolean))].sort();
+
+  const materials = [...matMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([mat, qtde]) => ({ mat, denom: denomMap.get(mat) || '', qtde }));
+
+  gerarInspecao({
+    cep:                ceps.join(', ') || '—',
+    local:              locais.join(', ') || '—',
+    centro:             g('centro'),
+    shipmentId:         g('shipmentId'),
+    agendamento:        formatDate(g('agendamento')),
+    nrTransporte:       g('nrTransporte'),
+    nomeCliente:        g('nomeCliente'),
+    nomeMotorista:      g('nomeMotorista'),
+    placaSimples:       g('placaSimples'),
+    placaComposicao:    g('placaComposicao'),
+    nomeTransportadora: g('nomeTransportadora'),
+    remessas,
+    pesoLiquido:        allGroups.reduce((a, r) => a + r.pesoLiquido, 0),
+    volumeAcumulado:    allGroups.reduce((a, r) => a + r.volumeAcumulado, 0),
+    totalQtde:          allGroups.reduce((a, r) => a + r.qtdeRemessa, 0),
+    materials,
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ════════════════════════════════════════════════
+// PAGINATION
+// ════════════════════════════════════════════════
+function renderPagination(totalPages) {
+  const start = (page - 1) * PAGE_SIZE + 1;
+  const end   = Math.min(page * PAGE_SIZE, filtered.length);
+  document.getElementById('page-info').textContent =
+    `${start}–${end} de ${filtered.length}`;
+
+  document.getElementById('btn-prev').disabled = page === 1;
+  document.getElementById('btn-next').disabled = page === totalPages;
+
+  // Page numbers (max 7 shown)
+  const numEl = document.getElementById('page-numbers');
+  numEl.innerHTML = '';
+  const range = paginationRange(page, totalPages);
+  range.forEach(p => {
+    if (p === '…') {
+      const span = document.createElement('span');
+      span.className = 'page-info';
+      span.textContent = '…';
+      numEl.appendChild(span);
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (p === page ? ' active' : '');
+      btn.textContent = p;
+      btn.onclick = () => { page = p; renderTable(); };
+      numEl.appendChild(btn);
+    }
+  });
+}
+
+function paginationRange(current, total) {
+  if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+  if (current <= 4) return [1,2,3,4,5,'…',total];
+  if (current >= total - 3) return [1,'…',total-4,total-3,total-2,total-1,total];
+  return [1,'…',current-1,current,current+1,'…',total];
+}
+
+function changePage(dir) {
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  page = Math.max(1, Math.min(totalPages, page + dir));
+  renderTable();
+}
+</script>
+<footer>
+  // Site desenvolvido por <span>Vinícius Chiapetta Portella Magalhães</span>
+</footer>
+
+</body>
+</html>
