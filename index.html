@@ -714,6 +714,27 @@
     padding: 4px 10px; gap: 12px;
   }
   .ins-logo  { font-size: 14px; font-weight: 900; letter-spacing: 3px; color: #fff; white-space: nowrap; }
+  .ins-doca {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 16px;
+  }
+  .ins-doca-label { font-size: 11px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .ins-doca-circles { display: flex; gap: 3px; }
+  .ins-doca-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    color: #000;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+  }
   .ins-badge { font-size: 13px; font-weight: 900; letter-spacing: 2px; color: #39ff14; text-transform: uppercase; flex: 1; text-align: center; }
   .ins-dt    { font-size: 18px; font-weight: 900; color: #fff; white-space: nowrap; }
   .ins-grid {
@@ -811,8 +832,14 @@
     .ins-page { box-shadow: none; margin: 0; width: 100%; }
     .ins-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .ins-title-row { background: #000 !important; }
-    .ins-logo, .ins-dt { color: #fff !important; }
+    .ins-logo, .ins-dt, .ins-doca-label { color: #fff !important; }
     .ins-badge { color: #39ff14 !important; }
+    .ins-doca-circle {
+      background: #fff !important;
+      color: #000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
   }
 
   /* ── Romaneio Modal ── */
@@ -882,6 +909,28 @@
     padding: 4px 10px;
   }
   .rom-logo { font-size: 14px; font-weight: 900; letter-spacing: 3px; color: #fff; }
+  .rom-doca {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    margin-left: 20px;
+  }
+  .rom-doca-label { font-size: 11px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .rom-doca-circles { display: flex; gap: 3px; }
+  .rom-doca-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    color: #000;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+  }
   .rom-dt   { font-size: 18px; font-weight: 900; letter-spacing: 2px; color: #fff; }
   .rom-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
   .rom-grid--smart {
@@ -998,8 +1047,15 @@
     .rom-stamp-title { background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rom-table thead th,
     .rom-logo, .rom-dt,
+    .rom-doca-label,
     .rom-obs-title,
     .rom-stamp-title { color: #fff !important; }
+    .rom-doca-circle {
+      background: #fff !important;
+      color: #000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
   }
 
   .btn-export {
@@ -2057,7 +2113,7 @@ function gerarInspecao(d) {
     .map(({ mat, qtde }) => {
       const matStr  = String(parseInt(String(mat).trim(), 10)) || String(mat).trim();
       const pal     = paletMap.get(String(mat).trim()) || paletMap.get(matStr) || null;
-      const fechados = pal ? Math.floor(qtde / pal) : 0;
+      const fechados = (pal && pal > 0) ? Math.floor(qtde / pal) : 0;
       return { mat: matStr, qtde, pal, fechados };
     })
     .filter(r => r.fechados > 0)
@@ -2086,7 +2142,7 @@ function gerarInspecao(d) {
     .map(({ mat, qtde }) => {
       const matStr  = String(parseInt(String(mat).trim(), 10)) || String(mat).trim();
       const pal     = paletMap.get(String(mat).trim()) || paletMap.get(matStr) || null;
-      const fracao  = pal ? (qtde % pal) : qtde;
+      const fracao  = (pal && pal > 0) ? (qtde % pal) : qtde;
       return { mat: matStr, fracao };
     })
     .filter(r => r.fracao > 0)
@@ -2108,6 +2164,22 @@ function gerarInspecao(d) {
     <div class="ins-header">
       <div class="ins-title-row">
         <div class="ins-logo">🚛 ROMANIX</div>
+        <div class="ins-doca">
+          <span class="ins-doca-label">DOCA:</span>
+          <div class="ins-doca-circles">
+            <span class="ins-doca-circle">01</span>
+            <span class="ins-doca-circle">02</span>
+            <span class="ins-doca-circle">03</span>
+            <span class="ins-doca-circle">04</span>
+            <span class="ins-doca-circle">05</span>
+            <span class="ins-doca-circle">06</span>
+            <span class="ins-doca-circle">07</span>
+            <span class="ins-doca-circle">08</span>
+            <span class="ins-doca-circle">09</span>
+            <span class="ins-doca-circle">10</span>
+            <span class="ins-doca-circle">11</span>
+          </div>
+        </div>
         <div class="ins-badge">INSPEÇÃO DE CARREGAMENTO</div>
         <div class="ins-dt">DT: ${escHtml(d.nrTransporte)}</div>
       </div>
@@ -2166,8 +2238,8 @@ function gerarRomaneio(d) {
   const tableRows = d.materials.map(({ mat, denom, qtde }) => {
     const matStr   = String(parseInt(String(mat).trim(), 10)) || String(mat).trim();
     const pal      = getPal(mat);
-    const fechados = pal !== null ? Math.floor(qtde / pal) : '—';
-    const fracoes  = pal !== null ? (qtde % pal)           : '—';
+    const fechados = (pal !== null && pal > 0) ? Math.floor(qtde / pal) : 0;
+    const fracoes  = (pal !== null && pal > 0) ? (qtde % pal)           : qtde;
     return { mat: matStr, denom, qtde, fechados, fracoes };
   });
 
@@ -2179,6 +2251,22 @@ function gerarRomaneio(d) {
     <div class="rom-header">
       <div class="rom-title-row">
         <div class="rom-logo">🚛 ROMANIX</div>
+        <div class="rom-doca">
+          <span class="rom-doca-label">DOCA:</span>
+          <div class="rom-doca-circles">
+            <span class="rom-doca-circle">01</span>
+            <span class="rom-doca-circle">02</span>
+            <span class="rom-doca-circle">03</span>
+            <span class="rom-doca-circle">04</span>
+            <span class="rom-doca-circle">05</span>
+            <span class="rom-doca-circle">06</span>
+            <span class="rom-doca-circle">07</span>
+            <span class="rom-doca-circle">08</span>
+            <span class="rom-doca-circle">09</span>
+            <span class="rom-doca-circle">10</span>
+            <span class="rom-doca-circle">11</span>
+          </div>
+        </div>
         <div class="rom-dt">DT: ${escHtml(d.nrTransporte)}</div>
       </div>
       <div class="rom-grid rom-grid--smart">
@@ -2465,10 +2553,10 @@ function renderIndicadores() {
   const paletArr = [...matQtde.entries()]
     .map(([mat, qtde]) => {
       const pal = paletMap.get(mat) || paletMap.get(String(parseInt(mat,10))) || null;
-      if (!pal) return null;
+      if (!pal || pal === 0) return { mat, fechados: 0, fracoes: qtde };
       return { mat, fechados: Math.floor(qtde / pal), fracoes: qtde % pal };
     })
-    .filter(Boolean)
+    .filter(r => r.fechados > 0 || r.fracoes > 0)
     .sort((a,b) => (b.fechados + b.fracoes/100) - (a.fechados + a.fracoes/100))
     .slice(0, 12);
 
