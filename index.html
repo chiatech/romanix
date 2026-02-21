@@ -575,6 +575,9 @@
 
   .palet-search {
     margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
   }
   .palet-search input {
     background: var(--surface);
@@ -588,7 +591,43 @@
     width: 320px;
     transition: border-color .2s;
   }
-  .palet-search input:focus { border-color: var(--accent); }
+  .palet-search select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 9px 14px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+    min-width: 150px;
+  }
+  .palet-search select option {
+    background: var(--surface);
+    color: var(--text);
+    padding: 6px;
+  }
+  .palet-search select option:checked {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .palet-search button {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius);
+    padding: 9px 16px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .palet-search button:hover { opacity: 0.85; }
+  .palet-search input:focus,
+  .palet-search select:focus { border-color: var(--accent); }
 
   #palet-wrapper {
     border: 1px solid var(--border);
@@ -629,12 +668,11 @@
     font-size: 12px;
     color: var(--accent2);
   }
-  #palet-table tbody td:last-child {
+  #palet-table tbody td:nth-child(3),
+  #palet-table tbody td:nth-child(4),
+  #palet-table tbody td:nth-child(5) {
     text-align: center;
     font-family: 'IBM Plex Mono', monospace;
-    font-weight: 700;
-    color: var(--accent);
-    text-shadow: 0 0 8px #39ff1466;
   }
   .palet-count {
     font-family: 'IBM Plex Mono', monospace;
@@ -773,6 +811,8 @@
     min-width: 110px;
     max-width: 160px;
     background: #fff;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .ins-paletes {
     font-size: 20px;
@@ -802,6 +842,8 @@
     border: 2px dashed #000;
     border-radius: 6px;
     overflow: hidden;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .ins-fracoes-title {
     background: #333;
@@ -956,11 +998,11 @@
   .rom-value { font-size: 10px; font-weight: 600; color: #000; margin-top: 1px; }
   .rom-value--highlight { font-size: 14px; font-weight: 900; }
   .rom-page-num { text-align: right; font-size: 10px; color: #444; margin-bottom: 5px; font-family: Arial, sans-serif; }
-  .rom-table { width: 100%; border-collapse: collapse; font-size: 14px; font-family: Arial, sans-serif; }
+  .rom-table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: Arial, sans-serif; }
   .rom-table thead tr { background: #000; }
   .rom-table thead th {
-    padding: 7px 8px; text-align: left; color: #fff;
-    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    padding: 5px 6px; text-align: left; color: #fff;
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .3px; border: 1px solid #000;
   }
   .rom-table thead th.col-mat  { width: 120px; text-align: center; }
@@ -968,10 +1010,14 @@
   .rom-table thead th.col-num   { width: 80px; text-align: center; }
   .rom-table thead th.col-blank { width: 70px; }
   .rom-table tbody tr:nth-child(even) { background: #f5f5f5; }
-  .rom-table tbody td { padding: 8px 8px; border: 1px solid #ccc; vertical-align: middle; color: #000; font-size: 14px; }
-  .rom-table tbody td.col-mat   { text-align: center; font-weight: 900; font-size: 16px; color: #000; }
-  .rom-table tbody td.col-denom { font-size: 9px; width: 200px; max-width: 200px; white-space: normal; word-break: break-word; overflow: hidden; }
-  .rom-center { text-align: center; font-weight: 700; color: #000; }
+  .rom-table tbody tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .rom-table tbody td { padding: 4px 5px; border: 1px solid #ccc; vertical-align: middle; color: #000; font-size: 11px; }
+  .rom-table tbody td.col-mat   { text-align: center; font-weight: 900; font-size: 13px; color: #000; }
+  .rom-table tbody td.col-denom { font-size: 8px; width: 200px; max-width: 200px; white-space: normal; word-break: break-word; overflow: hidden; }
+  .rom-center { text-align: center; font-weight: 900; color: #000; font-size: 13px; }
   .rom-blank  { min-width: 70px; }
   .rom-obs {
     margin-top: 14px;
@@ -1021,6 +1067,28 @@
     width: 100%;
     min-height: 70px;
   }
+  .rom-entrega {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 200px;
+    min-height: 70px;
+    flex-shrink: 0;
+    border-right: 1px solid #000;
+  }
+  .rom-entrega-title {
+    background: #000; color: #fff;
+    width: 100%;
+    text-align: center;
+    padding: 5px 6px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .rom-entrega-box {
+    flex: 1;
+    width: 100%;
+    min-height: 70px;
+  }
 
   @media print {
     @page { size: A4 landscape; margin: 10mm; }
@@ -1041,14 +1109,24 @@
       page-break-after: always;
     }
     .rom-page:last-child { page-break-after: avoid; }
+    
+    /* Prevent orphans and widows */
+    .rom-table tbody tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    .rom-table { orphans: 3; widows: 3; }
+    
     .rom-table thead tr,
     .rom-title-row,
     .rom-obs-title,
+    .rom-entrega-title,
     .rom-stamp-title { background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rom-table thead th,
     .rom-logo, .rom-dt,
     .rom-doca-label,
     .rom-obs-title,
+    .rom-entrega-title,
     .rom-stamp-title { color: #fff !important; }
     .rom-doca-circle {
       background: #fff !important;
@@ -1233,6 +1311,7 @@
   <div class="card"><div class="card-label">Embarques</div><div class="card-value" id="card-total">0</div></div>
   <div class="card"><div class="card-label">N° de Transporte</div><div class="card-value" id="card-dt">—</div></div>
   <div class="card"><div class="card-label">Remessas únicas</div><div class="card-value" id="card-remessas">0</div></div>
+  <div class="card"><div class="card-label">Materiais únicos</div><div class="card-value" id="card-materiais">0</div></div>
   <div class="card"><div class="card-label">CEPs únicos</div><div class="card-value" id="card-ceps">0</div></div>
   <div class="card"><div class="card-label">Peso total (t)</div><div class="card-value" id="card-cubagem">0</div></div>
   <div class="card"><div class="card-label">Total fardos/cx</div><div class="card-value" id="card-pedidos">0</div></div>
@@ -1312,11 +1391,18 @@
 <div id="page-paletizacao">
   <div class="palet-search">
     <input type="text" id="palet-search" placeholder="🔍  Buscar material ou produto..." />
+    <select id="palet-centro-filter" multiple size="1">
+      <option value="1063">Cariacica</option>
+      <option value="1064">Cachoeiro</option>
+      <option value="6300">Aracruz</option>
+      <option value="2100">Mucuri</option>
+    </select>
+    <button id="btn-export-palet">📥 Exportar Excel</button>
   </div>
   <div class="palet-count" id="palet-count"></div>
   <div id="palet-wrapper">
     <table id="palet-table">
-      <thead><tr><th>Material</th><th>Produto</th><th>Paletização</th></tr></thead>
+      <thead><tr><th>Material</th><th>Produto</th></tr></thead>
       <tbody id="palet-tbody"></tbody>
     </table>
   </div>
@@ -1429,6 +1515,8 @@ document.getElementById('tab-embarques').addEventListener('click', () => switchT
 document.getElementById('tab-indicadores').addEventListener('click', () => switchTab('indicadores'));
 document.getElementById('tab-paletizacao').addEventListener('click', () => switchTab('paletizacao'));
 document.getElementById('palet-search').addEventListener('input', filterPalet);
+document.getElementById('palet-centro-filter').addEventListener('change', filterPalet);
+document.getElementById('btn-export-palet').addEventListener('click', exportarPaletExcel);
 document.getElementById('btn-reset').addEventListener('click', resetDashboard);
 
 uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
@@ -1653,16 +1741,18 @@ function clearFilters() {
 // ════════════════════════════════════════════════
 function renderSummary() {
   const totalRemessas = new Set(filtered.map(g => g.remessa).filter(Boolean)).size;
+  const totalMateriais = new Set(filtered.map(g => g.material).filter(Boolean)).size;
   const totalCeps     = new Set(filtered.map(g => g.cep).filter(Boolean)).size;
   const totalCubagem  = filtered.reduce((a, g) => a + g.pesoLiquido, 0);
   const totalPedidos  = filtered.reduce((a, g) => a + g.qtdeRemessa, 0);
 
-  document.getElementById('card-total').textContent    = new Set(filtered.map(g => g.shipmentId).filter(Boolean)).size;
-  document.getElementById('card-dt').textContent       = filtered[0]?.nrTransporte || '—';
-  document.getElementById('card-remessas').textContent = totalRemessas.toLocaleString('pt-BR');
-  document.getElementById('card-ceps').textContent     = totalCeps.toLocaleString('pt-BR');
-  document.getElementById('card-cubagem').textContent  = totalCubagem.toFixed(3).replace('.', ',');
-  document.getElementById('card-pedidos').textContent  = totalPedidos.toLocaleString('pt-BR');
+  document.getElementById('card-total').textContent     = new Set(filtered.map(g => g.shipmentId).filter(Boolean)).size;
+  document.getElementById('card-dt').textContent        = filtered[0]?.nrTransporte || '—';
+  document.getElementById('card-remessas').textContent  = totalRemessas.toLocaleString('pt-BR');
+  document.getElementById('card-materiais').textContent = totalMateriais.toLocaleString('pt-BR');
+  document.getElementById('card-ceps').textContent      = totalCeps.toLocaleString('pt-BR');
+  document.getElementById('card-cubagem').textContent   = totalCubagem.toFixed(3).replace('.', ',');
+  document.getElementById('card-pedidos').textContent   = totalPedidos.toLocaleString('pt-BR');
 }
 
 // ════════════════════════════════════════════════
@@ -1897,94 +1987,242 @@ function renderCepTables() {
 // PALETIZAÇÃO
 // ════════════════════════════════════════════════
 const PALET_DATA = [
-  ['20081464','HFDX142 W C BR 30x12x06x72 NE MAX PURE',45],
-  ['20081465','HFDX147 W C BR 30x12x06x72 NE MIMMO',45],
-  ['20081466','HFDX142 W C BR 30x16x04x64 NE MAX PURE',54],
-  ['20081467','HFDX147 W C BR 30x16x04x64 NE MIMMO',54],
-  ['20081469','HFDX147 W C BR 30x24x03x72 NE MIMMO',42],
-  ['20081471','HFDX147 W N BR 30x04x16x64 NE MIMMO',54],
-  ['20081480','HFSX190 W C BR 30x12x06x72 NE MIMMO',45],
-  ['20081481','HFDX142 W C BR 30x24x03x72 NE MAX PURE',42],
-  ['20081482','HFDX142 W N BR 30x04x16x64 NE MAX PURE',54],
-  ['20081579','HFDX142 W C BR 30x40x02x80 NE MAX PURE',36],
-  ['20082219','HFDX142 W C BR 30x40x02x80 NE ROYAL CARE',36],
-  ['20086999','HFDX147 W C BR 30x08x08x64 NE MIMMO L8P7',54],
-  ['20089651','HFTX151 W N BR 20x04x16x64 NE MIMMO',54],
-  ['20089652','HFTX151 W N BR 20x12x04x48 NE MIMMO',70],
-  ['20089653','HFTX151 W N BR 20x24x02x48 NE MIMMO',72],
-  ['20091834','TOAX430 2R 60F 2X12 SCALA PLUS REG',64],
-  ['20091835','TOAX430 2R 100F 2X12 SCALA PLUS MPICOTE',64],
-  ['20091836','TOAX430 3R 120F 3X6 SCALA PLUS MEGA',48],
-  ['20095269','HFDX142 W C BR 30x16x04x64 NE FOFOPEL',54],
-  ['20097397','HFTX151 W N BR 20x12x06x72 NE MIMMO',45],
-  ['20097399','HFTX151 W N BR 20x24x03x72 NE MIMMO',36],
-  ['20103075','HFDX147 W N BR 40x06x10x60 NE MIMMO',54],
-  ['20103677','HFDX142 W N BR 40x06x10x60 NE MAX PURE',54],
-  ['20104309','LENCO FAC KLEENEX BLS FT 10X04X72 L4P3',60],
-  ['20104310','LENCO FAC KLEENEX BLS FT 10X12X4 UNIT',250],
-  ['20104311','PANO SCOTT DURAMAX 48X01X12 ANTIBAC',88],
-  ['20104312','PANO SCOTT DURAMAX 58X01X24 AZUL',48],
-  ['20104313','PANO SCOTT DURAMAX 58X01X24 BRANCO',48],
-  ['20104404','HFDX153 W N BR 20x04x12x48 NEVE T.SEDA',72],
-  ['20104405','HFDX153 W C BR 20x12x05x60 NEVE T.SEDA',60],
-  ['20104407','HFDX153 W C BR 20x18x04x72 NEVE T.SEDA',60],
-  ['20104408','HFDX153 W N BR 30x04x16x64 NEVE T.SEDA',54],
-  ['20104409','HFDX153 W C BR 30x12x06x72 NEVE T.SEDA',45],
-  ['20104410','HFDX153 W C BR 30x16x04x64 NEVE T.SEDA',54],
-  ['20104411','HFDX153 W C BR 30x18x04x72 NEVE T.SEDA',45],
-  ['20104412','HFDX153 W C BR 30x24x03x72 NEVE T.SEDA',42],
-  ['20104413','HFDX153 W C BR 30x32x02x64 NEVE T.SEDA',44],
-  ['20104414','HFTX153 W N BR 20x04x16x64 NEVE SUP.',54],
-  ['20104415','HFTX153 W C BR 20x12x06x72 NEVE SUP.',45],
-  ['20104416','HFTX153 W C BR 20x16x04x64 NEVE SUP.',54],
-  ['20104417','HFTX153 W C BR 20x18x04x72 NEVE SUP.',45],
-  ['20104418','HFTX153 W C BR 20x24x03x72 NEVE SUP.',42],
-  ['20104419','HFTX153 W C BR 20x32x02x64 NEVE SUP.',36],
-  ['20104420','LENCO FAC KLEENEX BX FD 50X50',63],
-  ['20104421','LENCO FAC KLEENEX BX FD 50X60 L60P50',63],
-  ['20104422','LENCO FAC KLEENEX BX FD 100X40 L100P80',56],
-  ['20104423','LENCO FAC KLEENEX BX FD 150X32 LMPN',54],
-  ['20104424','PANO SCOTT DURAMAX 58X02X12 BRANCO',48],
-  ['20104425','PANO SCOTT DURAMAX 58X03X08 BRANCO',48],
-  ['20104426','GUARD. SCOTT DIA A DIA FS 6X12X50 P',40],
-  ['20104427','GUARD. SCOTT DIA A DIA FS 6X12X50 G',24],
-  ['20104429','GUARD. SCOTT GRANDHOTEL FD 9X9X50 P',40],
-  ['20104430','GUARD. SCOTT GRANDHOTEL FD 8X9X50 G',25],
-  ['20105277','HFDX153 W N BR 30x40x02x80 NEVE T.SEDA',36],
-  ['20106005','HFDX153 W C BR 40x06x10x60 NEVE T.SEDA',54],
-  ['20106704','HFQX145 W C BR 20x12x04X48 NEVE UCOMFORT',54],
-  ['20106705','HFQX145 W N BR 20x04x12x48 NEVE UCOMFORT',54],
-  ['90004710','LENÇO UMEDECIDO MIMMO 40x24',95],
-  ['90004852','LENCO UMED. NEVE SUPREME 48X24',75],
-  ['90004853','LENCO UMED. NEVE TOQ SEDA 48X24',75],
-  ['90004854','LENCO UMED. NEVE TOQSEDA 48X4X6 L4P3',75],
-  ['20109594','LENCO FAC MIMMO BX FD 100X40',56],
-  ['20109735','THTS150 W C BR 20x12x04x48 NEVE CARE 3P',36],
-  ['20109736','THTS150 W C BR 20X6X10X60 NEVE CARE 3P',36],
-  ['20108365','LENCO FAC MIMMO BLS FT 08X06X72',36],
-  ['30241471','HFDX147 W N BR 30x04x16x64 NE MIMMO',54],
+  ['20081464','HFDX142 W C BR 30x12x06x72 NE MAX PURE',{1063:45,1064:50,6300:50,2100:45}],
+  ['20081465','HFDX147 W C BR 30x12x06x72 NE MIMMO',{1063:45,1064:50,6300:50,2100:45}],
+  ['20081466','HFDX142 W C BR 30x16x04x64 NE MAX PURE',{1063:54,1064:60,6300:60,2100:54}],
+  ['20081467','HFDX147 W C BR 30x16x04x64 NE MIMMO',{1063:54,1064:60,6300:60,2100:54}],
+  ['20081469','HFDX147 W C BR 30x24x03x72 NE MIMMO',{1063:42,1064:49,6300:49,2100:0}],
+  ['20081471','HFDX147 W N BR 30x04x16x64 NE MIMMO',{1063:54,1064:60,6300:60,2100:54}],
+  ['20081474','HFSX190 W N BR 30x04x16x64 NE MAX PURE',{1063:0,1064:0,6300:0,2100:0}],
+  ['20081479','HFSX190 W C BR 30x12x06x72 NE MAX PURE',{1063:0,1064:0,6300:0,2100:0}],
+  ['20081480','HFSX190 W C BR 30x12x06x72 NE MIMMO',{1063:45,1064:0,6300:0,2100:0}],
+  ['20081481','HFDX142 W C BR 30x24x03x72 NE MAX PURE',{1063:42,1064:49,6300:49,2100:42}],
+  ['20081482','HFDX142 W N BR 30x04x16x64 NE MAX PURE',{1063:54,1064:60,6300:60,2100:54}],
+  ['20081579','HFDX142 W C BR 30x40x02x80 NE MAX PURE',{1063:36,1064:45,6300:45,2100:36}],
+  ['20081901','HFDX147 W N BR 30x04x16x64 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
+  ['20081902','HFDX147 W N BR 30x08x08x64 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
+  ['20081961','HFDX142 W N BR 30x04x16x64 NE FOFOPEL',{1063:0,1064:0,6300:60,2100:0}],
+  ['20081984','HFDX142 W C BR 30x24x03x72 NE FOFOPEL',{1063:0,1064:0,6300:49,2100:0}],
+  ['20082084','HFDX142 W N BR 30x04x16x64 NE EKOBOM',{1063:0,1064:0,6300:0,2100:54}],
+  ['20082085','HFDX142 W C BR 30x12x06x72 NE EKOBOM',{1063:0,1064:0,6300:0,2100:45}],
+  ['20082219','HFDX142 W C BR 30x40x02x80 NE ROYAL CARE',{1063:36,1064:0,6300:0,2100:36}],
+  ['20084511','HFDX142 W C BR 30x16x04x64 NE EKOBOM',{1063:0,1064:0,6300:0,2100:54}],
+  ['20086999','HFDX147 W C BR 30x08x08x64 NE MIMMO L8P7',{1063:54,1064:0,6300:0,2100:0}],
+  ['20087342','HFSX190 W N BR 30x08x08x64 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
+  ['20087391','HFDX147 W C BR 30x12x06x72 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
+  ['20087393','HFDX147 W C BR 30x16x04x64 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
+  ['20087434','HFDX147 W C BR 30x24x03x72 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
+  ['20087435','HFSX190 W C BR 30x12x06x72 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
+  ['20087437','HFSX190 W C BR 30x16x04x64 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
+  ['20087454','HFSX190 W N BR 30x04x16x64 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
+  ['20087455','HFSX190 W N BR 30x04x16x64 PF FLORAL',{1063:0,1064:0,6300:0,2100:0}],
+  ['20087467','HFDX142 W C BR 30x12x06x72 NE GBARBOSA',{1063:0,1064:0,6300:0,2100:0}],
+  ['20087468','HFDX142 W C BR 30x16x04x64 NE GBARBOSA',{1063:0,1064:0,6300:0,2100:0}],
+  ['20089387','HFDX142 W N BR 30x12x06x72 NE FOFOPEL',{1063:0,1064:0,6300:40,2100:0}],
+  ['20089651','HFTX151 W N BR 20x04x16x64 NE MIMMO',{1063:54,1064:60,6300:60,2100:0}],
+  ['20089652','HFTX151 W N BR 20x12x04x48 NE MIMMO',{1063:70,1064:0,6300:0,2100:0}],
+  ['20089653','HFTX151 W N BR 20x24x02x48 NE MIMMO',{1063:72,1064:0,6300:0,2100:0}],
+  ['20091834','TOAX430 2R 60F 2X12 SCALA PLUS REG',{1063:64,1064:54,6300:54,2100:48}],
+  ['20091835','TOAX430 2R 100F 2X12 SCALA PLUS MPICOTE',{1063:64,1064:54,6300:54,2100:48}],
+  ['20091836','TOAX430 3R 120F 3X6 SCALA PLUS MEGA',{1063:48,1064:54,6300:54,2100:48}],
+  ['20092274','PAPEL FS HIG. ECONOCLEAN 18,5G 10X300X08',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092276','HFSX165 W N BR 30X04X16X64 NE NINO',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092383','GUARDANAPO SCALA 22X20 - CX 4800 UN',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092384','GUARDANAPO SCALA 22X20 - 3600 UN',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092386','GUARDANAPO NAPS 23X21,5 - 3600 UN',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092388','GUARDAPANO NAPS 33X30 - 1800 UN',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092389','PAPEL TOALHA INT. ECO 24G 21,5X21X1250',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092390','PAPEL TOALHA INT. ECO 24G 21,5X21X2400',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092392','PAPEL TOALHA ECONOCLEAN 24G 20x100x08',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092393','PAPEL TOALHA ECONOCLEAN 24G 20x200x06',{1063:0,1064:0,6300:0,2100:0}],
+  ['20092395','PAPEL TOALHA FD 02X12 SCALA',{1063:0,1064:0,6300:0,2100:0}],
+  ['20095269','HFDX142 W C BR 30x16x04x64 NE FOFOPEL',{1063:54,1064:0,6300:60,2100:0}],
+  ['20097397','HFTX151 W N BR 20x12x06x72 NE MIMMO',{1063:45,1064:40,6300:50,2100:45}],
+  ['20097399','HFTX151 W N BR 20x24x03x72 NE MIMMO',{1063:36,1064:42,6300:49,2100:30}],
+  ['20099823','HFSX190 W C BR 30x08x08x64 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
+  ['20101657','FRALDA DESC MAXX BABY REGULAR G 24x7',{1063:0,1064:0,6300:0,2100:0}],
+  ['20101659','FRALDA DESC MAXX BABY REGULAR EG 24x7',{1063:0,1064:0,6300:0,2100:0}],
+  ['20101660','FRALDA DESC MAXX BABY MEGA M 8x40',{1063:0,1064:0,6300:0,2100:0}],
+  ['20101661','FRALDA DESC MAXX BABY MEGA G 8x36',{1063:0,1064:0,6300:0,2100:0}],
+  ['20101662','FRALDA DESC MAXX BABY MEGA EG 8x30',{1063:0,1064:0,6300:0,2100:0}],
+  ['20101724','FRALDA DESC MAXX BABY REGULAR M 24x8',{1063:0,1064:0,6300:0,2100:0}],
+  ['20102946','HFSX190 W C BR 30x08x10x80 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
+  ['20103075','HFDX147 W N BR 40x06x10x60 NE MIMMO',{1063:54,1064:60,6300:60,2100:54}],
+  ['20103543','HFDX139 W C BR 30x16x04x64 NE DIA',{1063:0,1064:0,6300:0,2100:0}],
+  ['20103568','HFDX139 W C BR 30x12x06x72 NE DIA',{1063:0,1064:0,6300:0,2100:0}],
+  ['20103677','HFDX142 W N BR 40x06x10x60 NE MAX PURE',{1063:54,1064:60,6300:60,2100:54}],
+  ['20104309','LENCO FAC KLEENEX BLS FT 10X04X72 L4P3',{1063:60,1064:60,6300:60,2100:48}],
+  ['20104310','LENCO FAC KLEENEX BLS FT 10X12X48 UNIT',{1063:250,1064:300,6300:300,2100:0}],
+  ['20104311','PANO SCOTT DURAMAX 48X01X12 ANTIBAC',{1063:88,1064:60,6300:60,2100:0}],
+  ['20104312','PANO SCOTT DURAMAX 58X01X24 AZUL',{1063:48,1064:60,6300:60,2100:48}],
+  ['20104313','PANO SCOTT DURAMAX 58X01X24 BRANCO',{1063:48,1064:60,6300:60,2100:48}],
+  ['20104404','HFDX153 W N BR 20x04x12x48 NEVE T.SEDA',{1063:72,1064:80,6300:80,2100:0}],
+  ['20104405','HFDX153 W C BR 20x12x05x60 NEVE T.SEDA',{1063:60,1064:60,6300:72,2100:60}],
+  ['20104407','HFDX153 W C BR 20x18x04x72 NEVE T.SEDA',{1063:60,1064:48,6300:48,2100:60}],
+  ['20104408','HFDX153 W N BR 30x04x16x64 NEVE T.SEDA',{1063:54,1064:60,6300:60,2100:54}],
+  ['20104409','HFDX153 W C BR 30x12x06x72 NEVE T.SEDA',{1063:45,1064:50,6300:50,2100:45}],
+  ['20104410','HFDX153 W C BR 30x16x04x64 NEVE T.SEDA',{1063:54,1064:60,6300:60,2100:54}],
+  ['20104411','HFDX153 W C BR 30x18x04x72 NEVE T.SEDA',{1063:45,1064:36,6300:36,2100:0}],
+  ['20104412','HFDX153 W C BR 30x24x03x72 NEVE T.SEDA',{1063:42,1064:49,6300:49,2100:42}],
+  ['20104413','HFDX153 W C BR 30x32x02x64 NEVE T.SEDA',{1063:44,1064:55,6300:0,2100:0}],
+  ['20104414','HFTX153 W N BR 20x04x16x64 NEVE SUP.',{1063:54,1064:60,6300:60,2100:54}],
+  ['20104415','HFTX153 W C BR 20x12x06x72 NEVE SUP.',{1063:45,1064:50,6300:50,2100:45}],
+  ['20104416','HFTX153 W C BR 20x16x04x64 NEVE SUP.',{1063:54,1064:60,6300:60,2100:54}],
+  ['20104417','HFTX153 W C BR 20x18x04x72 NEVE SUP.',{1063:45,1064:36,6300:36,2100:0}],
+  ['20104418','HFTX153 W C BR 20x24x03x72 NEVE SUP.',{1063:42,1064:49,6300:49,2100:42}],
+  ['20104419','HFTX153 W C BR 20x32x02x64 NEVE SUP.',{1063:36,1064:0,6300:0,2100:0}],
+  ['20104420','LENCO FAC KLEENEX BX FD 50X50',{1063:63,1064:99,6300:99,2100:0}],
+  ['20104421','LENCO FAC KLEENEX BX FD 50X60 L60P50',{1063:63,1064:90,6300:90,2100:90}],
+  ['20104422','LENCO FAC KLEENEX BX FD 100X40 L100P80',{1063:56,1064:80,6300:80,2100:48}],
+  ['20104423','LENCO FAC KLEENEX BX FD 150X32 LMPN',{1063:54,1064:60,6300:60,2100:0}],
+  ['20104424','PANO SCOTT DURAMAX 58X02X12 BRANCO',{1063:48,1064:60,6300:60,2100:0}],
+  ['20104425','PANO SCOTT DURAMAX 58X03X08 BRANCO',{1063:48,1064:60,6300:60,2100:48}],
+  ['20104426','GUARD. SCOTT DIA A DIA FS 6X12X50 P',{1063:40,1064:45,6300:45,2100:32}],
+  ['20104427','GUARD. SCOTT DIA A DIA FS 6X12X50 G',{1063:24,1064:24,6300:24,2100:0}],
+  ['20104429','GUARD. SCOTT GRANDHOTEL FD 9X9X50 P',{1063:40,1064:45,6300:45,2100:55}],
+  ['20104430','GUARD. SCOTT GRANDHOTEL FD 8X9X50 G',{1063:25,1064:25,6300:25,2100:0}],
+  ['20105125','PAPEL TOALHA FD 02X12 SCALA MULTIPICOTE',{1063:0,1064:0,6300:0,2100:0}],
+  ['20105126','PAPEL TOALHA FD 03X06 SCALA MEGA',{1063:0,1064:0,6300:0,2100:0}],
+  ['20105277','HFDX153 W N BR 30x40x02x80 NEVE T.SEDA',{1063:36,1064:0,6300:0,2100:0}],
+  ['20106005','HFDX153 W C BR 40x06x10x60 NEVE T.SEDA',{1063:54,1064:60,6300:60,2100:0}],
+  ['20106196','HFDX142 W C BR 20x12x06x72 NE USUAL',{1063:0,1064:0,6300:0,2100:0}],
+  ['20106204','HFDX142 W C BR 20x12x06x72 NE FLORAL',{1063:0,1064:50,6300:60,2100:45}],
+  ['20106294','PAP HIG FD MAX PURE COMPACTO NEUTRO 30M',{1063:0,1064:0,6300:0,2100:0}],
+  ['20106704','HFQX145 W C BR 20x12x04X48 NEVE UCOMFORT',{1063:54,1064:60,6300:60,2100:45}],
+  ['20106705','HFQX145 W N BR 20x04x12x48 NEVE UCOMFORT',{1063:54,1064:0,6300:60,2100:0}],
+  ['20107570','HFDX142 W C BR 30x12x06x72 NE ZEEP',{1063:0,1064:0,6300:0,2100:0}],
+  ['20108365','LENCO FAC MIMMO BLS FT 08X06X72',{1063:36,1064:64,6300:64,2100:48}],
+  ['20108495','HFDX142 W C BR 30x12x06x72 NE ECONOBOM',{1063:0,1064:0,6300:50,2100:45}],
+  ['20108497','HFDX142 W C BR 30x24x03x72 NE ECONOBOM',{1063:0,1064:0,6300:0,2100:42}],
+  ['20108498','HFDX142 W C BR 30x32x02x64 NE ECONOBOM',{1063:0,1064:0,6300:0,2100:44}],
+  ['20109126','HFDX142 W C BR 30x12x06x72 NE F&C FAMILY',{1063:0,1064:0,6300:0,2100:0}],
+  ['20109128','HFDX142 W C BR 30x16x04x64 NE F&C FAMILY',{1063:0,1064:0,6300:0,2100:0}],
+  ['20109594','LENCO FAC MIMMO BX FD 100X40',{1063:56,1064:80,6300:80,2100:40}],
+  ['20109628','HFDX147 W C BR 30x08x08x64 NE MIMMO',{1063:0,1064:0,6300:0,2100:0}],
+  ['20109727','HFQX145 W C BR 20x24x03X72 NEVE UCOMFORT',{1063:0,1064:0,6300:0,2100:0}],
+  ['20109735','HFTX153 W C BR 20x12x04x48 NEVE TQ ONDAS',{1063:36,1064:60,6300:36,2100:0}],
+  ['20109736','HFTX153 W C BR 20X06X10X60 NEVE TQ ONDAS',{1063:36,1064:0,6300:0,2100:0}],
+  ['20110078','PANO SCALA 50X01X24 BRANCO',{1063:0,1064:0,6300:0,2100:0}],
+  ['20110570','GUARD. SCALA FS 6X12X50 P',{1063:0,1064:0,6300:0,2100:32}],
+  ['20111062','TFTX205 2R 100F 3X6 GRAND HOTEL WARM UP',{1063:0,1064:0,6300:0,2100:0}],
+  ['20111095','HFDX147 W N BR 40x12x06x72 NE MIMMO',{1063:0,1064:35,6300:0,2100:36}],
+  ['20111425','HFDX147 W C BR 30x12x06x72 MIMMO DECORAD',{1063:0,1064:0,6300:0,2100:45}],
+  ['21067158','HFDX142 W C BR 30x40x02x80 NE MAX EXP',{1063:0,1064:45,6300:45,2100:0}],
+  ['21068566','TOAX430 3R 120F 3X6 SCALA PLUS MEGA EXP',{1063:0,1064:0,6300:0,2100:0}],
+  ['30241465','HFDX147 W C BR 30x12x06x72 NE MIMMO',{1063:0,1064:50,6300:0,2100:0}],
+  ['30241471','HFDX147 W N BR 30x04x16x64 NE MIMMO',{1063:54,1064:0,6300:0,2100:0}],
+  ['30242383','GUARDANAPO SCALA 22X20 - CX 4800 UN',{1063:0,1064:0,6300:0,2100:0}],
+  ['30242389','PAPEL TOALHA INT. ECO 24G 21,5X21X1250',{1063:0,1064:0,6300:0,2100:0}],
+  ['90004480','LENÇO UMEDECIDO MIMMO 40x2',{1063:0,1064:48,6300:48,2100:0}],
+  ['90004710','LENÇO UMEDECIDO MIMMO 40x24',{1063:95,1064:48,6300:48,2100:48}],
+  ['90004852','LENCO UMED. NEVE SUPREME 48X24',{1063:75,1064:84,6300:84,2100:0}],
+  ['90004853','LENCO UMED. NEVE TOQ SEDA 48X24',{1063:75,1064:70,6300:70,2100:48}],
+  ['90004854','LENCO UMED. NEVE TOQSEDA 48X4X6 L4P3',{1063:75,1064:75,6300:75,2100:0}],
+  ['90005082','LENCO UMED. NEVE ON THE GO 16X24',{1063:160,1064:50,6300:140,2100:0}],
 ];
 
 function renderPaletTable(data) {
   const tbody = document.getElementById('palet-tbody');
-  tbody.innerHTML = data.map(([mat, prod, palet]) => `
-    <tr>
-      <td>${escHtml(mat)}</td>
-      <td>${escHtml(prod)}</td>
-      <td>${palet}</td>
-    </tr>
-  `).join('');
+  const thead = document.querySelector('#palet-table thead tr');
+  const selectEl = document.getElementById('palet-centro-filter');
+  const selectedCentros = Array.from(selectEl.selectedOptions).map(opt => opt.value);
+  
+  // Map centro code to name
+  const centroNames = { '1063': 'Cariacica', '1064': 'Cachoeiro', '6300': 'Aracruz', '2100': 'Mucuri' };
+  
+  // Update header based on selection
+  if (selectedCentros.length === 0) {
+    // No centro selected - show only Material and Produto
+    thead.innerHTML = `<th>Material</th><th>Produto</th>`;
+    tbody.innerHTML = data.map(([mat, prod]) => `
+      <tr>
+        <td>${escHtml(mat)}</td>
+        <td>${escHtml(prod)}</td>
+      </tr>
+    `).join('');
+  } else {
+    // Show selected centros
+    const headerCols = selectedCentros.map(c => `<th>${centroNames[c]}</th>`).join('');
+    thead.innerHTML = `<th>Material</th><th>Produto</th>${headerCols}`;
+    
+    tbody.innerHTML = data.map(([mat, prod, centros]) => {
+      const dataCols = selectedCentros.map(c => `<td>${centros[c] || 0}</td>`).join('');
+      return `
+        <tr>
+          <td>${escHtml(mat)}</td>
+          <td>${escHtml(prod)}</td>
+          ${dataCols}
+        </tr>
+      `;
+    }).join('');
+  }
+  
   document.getElementById('palet-count').textContent =
     `// ${data.length} produto${data.length !== 1 ? 's' : ''}`;
 }
 
 function filterPalet() {
   const q = document.getElementById('palet-search').value.toLowerCase();
-  const result = q
+  const selectEl = document.getElementById('palet-centro-filter');
+  const selectedCentros = Array.from(selectEl.selectedOptions).map(opt => opt.value);
+  
+  let result = q
     ? PALET_DATA.filter(([mat, prod]) =>
         mat.toLowerCase().includes(q) || prod.toLowerCase().includes(q))
     : PALET_DATA;
+  
+  // If centros selected, filter products that have paletização > 0 in ANY selected centro
+  if (selectedCentros.length > 0) {
+    result = result.filter(([,,centros]) => 
+      selectedCentros.some(c => (centros[c] || 0) > 0)
+    );
+  }
+  
   renderPaletTable(result);
+}
+
+function exportarPaletExcel() {
+  const selectEl = document.getElementById('palet-centro-filter');
+  const selectedCentros = Array.from(selectEl.selectedOptions).map(opt => opt.value);
+  const centroNames = { '1063': 'Cariacica', '1064': 'Cachoeiro', '6300': 'Aracruz', '2100': 'Mucuri' };
+  
+  // Get filtered data
+  const q = document.getElementById('palet-search').value.toLowerCase();
+  let data = q
+    ? PALET_DATA.filter(([mat, prod]) =>
+        mat.toLowerCase().includes(q) || prod.toLowerCase().includes(q))
+    : PALET_DATA;
+  
+  if (selectedCentros.length > 0) {
+    data = data.filter(([,,centros]) => 
+      selectedCentros.some(c => (centros[c] || 0) > 0)
+    );
+  }
+  
+  // Build worksheet data
+  const headers = ['Material', 'Produto'];
+  if (selectedCentros.length > 0) {
+    headers.push(...selectedCentros.map(c => centroNames[c]));
+  } else {
+    headers.push('Cariacica', 'Cachoeiro', 'Aracruz', 'Mucuri');
+  }
+  
+  const rows = data.map(([mat, prod, centros]) => {
+    const row = [mat, prod];
+    if (selectedCentros.length > 0) {
+      row.push(...selectedCentros.map(c => centros[c] || 0));
+    } else {
+      row.push(centros[1063] || 0, centros[1064] || 0, centros[6300] || 0, centros[2100] || 0);
+    }
+    return row;
+  });
+  
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Paletização');
+  
+  const today = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `paletizacao_${today}.xlsx`);
 }
 
 // ════════════════════════════════════════════════
@@ -2102,9 +2340,11 @@ function exportarExcel() {
 // INSPEÇÃO DE CARREGAMENTO
 // ════════════════════════════════════════════════
 function gerarInspecao(d) {
+  const centro = String(d.centro).trim();
   const paletMap = new Map();
-  PALET_DATA.forEach(([mat,,pal]) => {
+  PALET_DATA.forEach(([mat,,centros]) => {
     const s = String(mat).trim();
+    const pal = centros[centro] ?? centros[String(parseInt(centro, 10))] ?? 0;
     paletMap.set(s, pal);
     paletMap.set(String(parseInt(s, 10)), pal);
   });
@@ -2214,13 +2454,15 @@ function gerarInspecao(d) {
 // ROMANEIO
 // ════════════════════════════════════════════════
 function gerarRomaneio(d) {
-  const ROWS_PER_PAGE = 12;
+  const ROWS_PER_PAGE = 21;
 
-  // paletMap com tripla chave: string original, string trimada, inteiro sem zeros
+  // paletMap considerando o centro do embarque
+  const centro = String(d.centro).trim();
   const paletMap = new Map();
-  PALET_DATA.forEach(([mat,,pal]) => {
+  PALET_DATA.forEach(([mat,,centros]) => {
     const s = String(mat).trim();
     const n = String(parseInt(s, 10));
+    const pal = centros[centro] ?? centros[String(parseInt(centro, 10))] ?? 0;
     paletMap.set(s, pal);
     paletMap.set(n, pal);
   });
@@ -2335,6 +2577,10 @@ function gerarRomaneio(d) {
           <div style="display:flex;flex-direction:column;flex:1;border-right:1px solid #000;">
             <div class="rom-obs-title">Observações</div>
             <div class="rom-obs-body"></div>
+          </div>
+          <div class="rom-entrega">
+            <div class="rom-entrega-title">Entrega de n°:</div>
+            <div class="rom-entrega-box"></div>
           </div>
           <div class="rom-stamp">
             <div class="rom-stamp-title">Carimbo de Corte</div>
@@ -2472,9 +2718,12 @@ function renderIndicadores() {
   document.getElementById('ind-empty').style.display   = 'none';
   document.getElementById('ind-content').style.display = 'block';
 
+  // Pega centro da primeira linha do arquivo
+  const centro = String(getVal(rawDataRows[0], 'centro') || '').trim();
   const paletMap = new Map();
-  PALET_DATA.forEach(([mat,,pal]) => {
+  PALET_DATA.forEach(([mat,,centros]) => {
     const s = String(mat).trim();
+    const pal = centros[centro] ?? centros[String(parseInt(centro, 10))] ?? 0;
     paletMap.set(s, pal);
     paletMap.set(String(parseInt(s, 10)), pal);
   });
