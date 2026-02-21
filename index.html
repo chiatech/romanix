@@ -1224,18 +1224,22 @@
 
   /* ── Cursor Neon ── */
   * { cursor: none !important; }
+  select, select * { cursor: default !important; }
   #cursor-arrow {
     position: fixed;
     pointer-events: none;
     z-index: 99999;
     top: 0; left: 0;
-    transform-origin: 4px 2px;
-    filter: drop-shadow(0 0 4px #39ff14) drop-shadow(0 0 10px #39ff14);
+    width: 48px;
+    height: 48px;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     transition: filter .2s;
   }
-  #cursor-arrow svg path {
-    fill: #39ff14;
-    transition: fill .2s;
+  #cursor-arrow img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
   #cursor-canvas {
     position: fixed;
@@ -1244,9 +1248,8 @@
     z-index: 99997;
   }
   body.light-theme #cursor-arrow {
-    filter: drop-shadow(0 0 4px #1a8a00) drop-shadow(0 0 8px #1a8a00);
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
   }
-  body.light-theme #cursor-arrow svg path { fill: #1a8a00; }
 
   /* ── Footer ── */
   footer {
@@ -1274,9 +1277,7 @@
 <body>
 <canvas id="cursor-canvas"></canvas>
 <div id="cursor-arrow">
-  <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 2L2 19L7 14L10.5 22L13 21L9.5 13L17 13L2 2Z"/>
-  </svg>
+  <img src="cursor-bear.png" alt="cursor">
 </div>
 
 <header>
