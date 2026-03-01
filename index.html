@@ -1005,16 +1005,16 @@
     font-size: 8px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .2px; border: 1px solid #000;
   }
-  .rom-table thead th.col-mat  { width: 120px; text-align: center; }
+  .rom-table thead th.col-mat  { width: 100px; text-align: center; }
   .rom-table thead th.col-denom { width: 192px; max-width: 192px; }
-  .rom-table thead th.col-num   { width: 60px; text-align: center; }
+  .rom-table thead th.col-num   { width: 50px; text-align: center; }
   .rom-table thead th.col-blank { width: 70px; }
   .rom-table tbody tr:nth-child(even) { background: #f5f5f5; }
   .rom-table tbody tr {
     page-break-inside: avoid;
     break-inside: avoid;
   }
-  .rom-table tbody td { padding: 2px 3px; border: 1px solid #ccc; vertical-align: middle; color: #000; font-size: 10px; line-height: 1.2; }
+  .rom-table tbody td { padding: 2px 3px; border: 1px solid #ccc; vertical-align: middle; color: #000; font-size: 9px; line-height: 1.2; }
   .rom-table tbody td.col-mat   { text-align: center; font-weight: 900; font-size: 12px; color: #000; }
   .rom-table tbody td.col-denom { font-size: 9px; width: 192px; max-width: 192px; white-space: normal; word-break: break-word; overflow: hidden; text-align: center; font-weight: 700; }
   .rom-center { text-align: center; font-weight: 900; color: #000; font-size: 12px; }
@@ -2520,7 +2520,7 @@ function gerarRomaneio(d) {
         <div class="rom-field rom-field--lg"><span class="rom-label">Local</span><span class="rom-value">${escHtml(d.local)}</span></div>
         <div class="rom-field rom-field--xl"><span class="rom-label">Remessas (${remessaCount})</span><span class="rom-value">${escHtml(remessaStr)}</span></div>
         <div class="rom-field rom-field--sm"><span class="rom-label">Peso Líquido</span><span class="rom-value">${d.pesoLiquido.toFixed(3).replace('.', ',')} t</span></div>
-        <div class="rom-field rom-field--sm"><span class="rom-label">Cubagem</span><span class="rom-value">${Math.round(d.volumeAcumulado).toLocaleString('pt-BR')}</span></div>
+        <div class="rom-field rom-field--sm"><span class="rom-label">Cubagem da DT</span><span class="rom-value">${Math.round(d.volumeAcumulado).toLocaleString('pt-BR')}</span></div>
         <div class="rom-field rom-field--sm"><span class="rom-label">Total Fardos</span><span class="rom-value rom-value--highlight">${cepTotalQtde.toLocaleString('pt-BR')}</span></div>
         <div class="rom-field rom-field--lg"><span class="rom-label">Cliente</span><span class="rom-value">${escHtml(d.nomeCliente)}</span></div>
       </div>
