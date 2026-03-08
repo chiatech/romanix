@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Romanix</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&family=Red+Hat+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<script src="paletizacao.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="paletizacao.js"></script>
 <style>
   :root {
     --bg: #000000;
@@ -831,6 +833,13 @@
     width: 100%;
     letter-spacing: .5px;
   }
+  .ins-familia {
+    font-size: 9px;
+    font-weight: 600;
+    color: #555;
+    text-align: center;
+    margin-top: 2px;
+  }
   .ins-info {
     font-size: 10px;
     color: #666;
@@ -1007,6 +1016,7 @@
   }
   .rom-table thead th.col-mat  { width: 100px; text-align: center; }
   .rom-table thead th.col-denom { width: 192px; max-width: 192px; }
+  .rom-table thead th.col-familia { width: 80px; text-align: center; }
   .rom-table thead th.col-num   { width: 50px; text-align: center; }
   .rom-table thead th.col-blank { width: 70px; }
   .rom-table tbody tr:nth-child(even) { background: #f5f5f5; }
@@ -1017,6 +1027,7 @@
   .rom-table tbody td { padding: 2px 3px; border: 1px solid #ccc; vertical-align: middle; color: #000; font-size: 9px; line-height: 1.2; }
   .rom-table tbody td.col-mat   { text-align: center; font-weight: 900; font-size: 12px; color: #000; }
   .rom-table tbody td.col-denom { font-size: 9px; width: 192px; max-width: 192px; white-space: normal; word-break: break-word; overflow: hidden; text-align: center; font-weight: 700; }
+  .rom-table tbody td.col-familia { text-align: center; font-size: 9px; font-weight: 600; color: #000; width: 80px; }
   .rom-center { text-align: center; font-weight: 900; color: #000; font-size: 12px; }
   .rom-blank  { min-width: 70px; }
   .rom-obs {
@@ -1040,11 +1051,38 @@
   }
   .rom-obs-body {
     flex: 1;
-    min-height: 70px;
-    padding: 8px 10px;
-    font-size: 12px;
+    min-height: 40px;
+    padding: 5px 8px;
+    font-size: 11px;
     color: #000;
     border-right: 1px solid #000;
+  }
+  .rom-separador {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    border-right: 1px solid #000;
+  }
+  .rom-separador-title {
+    background: #000;
+    color: #fff;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .rom-separador-body {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    padding: 8px 10px;
+    min-height: 40px;
+  }
+  .rom-separador-line {
+    width: 100%;
+    border-bottom: 1px dashed #000;
+    padding-top: 20px;
   }
   .rom-stamp {
     display: flex;
@@ -1393,17 +1431,14 @@
   <div class="palet-search">
     <input type="text" id="palet-search" placeholder="🔍  Buscar material ou produto..." />
     <select id="palet-centro-filter" multiple size="1">
-      <option value="1063">Cariacica</option>
-      <option value="1064">Cachoeiro</option>
-      <option value="6300">Aracruz</option>
-      <option value="2100">Mucuri</option>
+      <!-- Será populado automaticamente ao carregar PLT.xlsm -->
     </select>
     <button id="btn-export-palet">📥 Exportar Excel</button>
   </div>
   <div class="palet-count" id="palet-count"></div>
   <div id="palet-wrapper">
     <table id="palet-table">
-      <thead><tr><th>Material</th><th>Produto</th></tr></thead>
+      <thead><tr><th>Material</th><th>Produto</th><th>Família</th></tr></thead>
       <tbody id="palet-tbody"></tbody>
     </table>
   </div>
@@ -1455,7 +1490,7 @@ const DISPLAY_COLS = [
   { key: 'material',           label: 'Material' },
   { key: 'denominacao',        label: 'Denominação' },
   { key: 'pesoLiquido',        label: 'Peso (t)' },
-  { key: 'volumeAcumulado',    label: 'Cubagem do Veículo' },
+  { key: 'volumeAcumulado',    label: 'Cubagem da DT' },
   { key: 'qtdeRemessa',        label: 'Pedido Fardos/Caixas' },
   { key: 'nomeCliente',        label: 'Cliente' },
   { key: 'nomeMotorista',      label: 'Motorista' },
@@ -1519,6 +1554,17 @@ document.getElementById('palet-search').addEventListener('input', filterPalet);
 document.getElementById('palet-centro-filter').addEventListener('change', filterPalet);
 document.getElementById('btn-export-palet').addEventListener('click', exportarPaletExcel);
 document.getElementById('btn-reset').addEventListener('click', resetDashboard);
+
+// Inicializa dropdown de centros com os centros disponíveis em PALET_DATA
+(function initPaletizacao() {
+  const allCentros = new Set();
+  PALET_DATA.forEach(([,,,centros]) => {
+    Object.keys(centros).forEach(c => allCentros.add(c));
+  });
+  const centrosCodes = Array.from(allCentros).sort();
+  updateCentroFilter(centrosCodes);
+  console.log(`✅ Paletização carregada: ${PALET_DATA.length} produtos, ${centrosCodes.length} centros`);
+})();
 
 uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
@@ -1987,140 +2033,24 @@ function renderCepTables() {
 // ════════════════════════════════════════════════
 // PALETIZAÇÃO
 // ════════════════════════════════════════════════
-const PALET_DATA = [
-  ['20081464','HFDX142 W C BR 30x12x06x72 NE MAX PURE',{1063:45,1064:50,6300:50,2100:45}],
-  ['20081465','HFDX147 W C BR 30x12x06x72 NE MIMMO',{1063:45,1064:50,6300:50,2100:45}],
-  ['20081466','HFDX142 W C BR 30x16x04x64 NE MAX PURE',{1063:54,1064:60,6300:60,2100:54}],
-  ['20081467','HFDX147 W C BR 30x16x04x64 NE MIMMO',{1063:54,1064:60,6300:60,2100:54}],
-  ['20081469','HFDX147 W C BR 30x24x03x72 NE MIMMO',{1063:42,1064:49,6300:49,2100:0}],
-  ['20081471','HFDX147 W N BR 30x04x16x64 NE MIMMO',{1063:54,1064:60,6300:60,2100:54}],
-  ['20081474','HFSX190 W N BR 30x04x16x64 NE MAX PURE',{1063:0,1064:0,6300:0,2100:0}],
-  ['20081479','HFSX190 W C BR 30x12x06x72 NE MAX PURE',{1063:0,1064:0,6300:0,2100:0}],
-  ['20081480','HFSX190 W C BR 30x12x06x72 NE MIMMO',{1063:45,1064:0,6300:0,2100:0}],
-  ['20081481','HFDX142 W C BR 30x24x03x72 NE MAX PURE',{1063:42,1064:49,6300:49,2100:42}],
-  ['20081482','HFDX142 W N BR 30x04x16x64 NE MAX PURE',{1063:54,1064:60,6300:60,2100:54}],
-  ['20081579','HFDX142 W C BR 30x40x02x80 NE MAX PURE',{1063:36,1064:45,6300:45,2100:36}],
-  ['20081901','HFDX147 W N BR 30x04x16x64 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
-  ['20081902','HFDX147 W N BR 30x08x08x64 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
-  ['20081961','HFDX142 W N BR 30x04x16x64 NE FOFOPEL',{1063:0,1064:0,6300:60,2100:0}],
-  ['20081984','HFDX142 W C BR 30x24x03x72 NE FOFOPEL',{1063:0,1064:0,6300:49,2100:0}],
-  ['20082084','HFDX142 W N BR 30x04x16x64 NE EKOBOM',{1063:0,1064:0,6300:0,2100:54}],
-  ['20082085','HFDX142 W C BR 30x12x06x72 NE EKOBOM',{1063:0,1064:0,6300:0,2100:45}],
-  ['20082219','HFDX142 W C BR 30x40x02x80 NE ROYAL CARE',{1063:36,1064:0,6300:0,2100:36}],
-  ['20084511','HFDX142 W C BR 30x16x04x64 NE EKOBOM',{1063:0,1064:0,6300:0,2100:54}],
-  ['20086999','HFDX147 W C BR 30x08x08x64 NE MIMMO L8P7',{1063:54,1064:0,6300:0,2100:0}],
-  ['20087342','HFSX190 W N BR 30x08x08x64 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
-  ['20087391','HFDX147 W C BR 30x12x06x72 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
-  ['20087393','HFDX147 W C BR 30x16x04x64 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
-  ['20087434','HFDX147 W C BR 30x24x03x72 NE LA VIE',{1063:0,1064:0,6300:0,2100:0}],
-  ['20087435','HFSX190 W C BR 30x12x06x72 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
-  ['20087437','HFSX190 W C BR 30x16x04x64 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
-  ['20087454','HFSX190 W N BR 30x04x16x64 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
-  ['20087455','HFSX190 W N BR 30x04x16x64 PF FLORAL',{1063:0,1064:0,6300:0,2100:0}],
-  ['20087467','HFDX142 W C BR 30x12x06x72 NE GBARBOSA',{1063:0,1064:0,6300:0,2100:0}],
-  ['20087468','HFDX142 W C BR 30x16x04x64 NE GBARBOSA',{1063:0,1064:0,6300:0,2100:0}],
-  ['20089387','HFDX142 W N BR 30x12x06x72 NE FOFOPEL',{1063:0,1064:0,6300:40,2100:0}],
-  ['20089651','HFTX151 W N BR 20x04x16x64 NE MIMMO',{1063:54,1064:60,6300:60,2100:0}],
-  ['20089652','HFTX151 W N BR 20x12x04x48 NE MIMMO',{1063:70,1064:0,6300:0,2100:0}],
-  ['20089653','HFTX151 W N BR 20x24x02x48 NE MIMMO',{1063:72,1064:0,6300:0,2100:0}],
-  ['20091834','TOAX430 2R 60F 2X12 SCALA PLUS REG',{1063:64,1064:54,6300:54,2100:48}],
-  ['20091835','TOAX430 2R 100F 2X12 SCALA PLUS MPICOTE',{1063:64,1064:54,6300:54,2100:48}],
-  ['20091836','TOAX430 3R 120F 3X6 SCALA PLUS MEGA',{1063:48,1064:54,6300:54,2100:48}],
-  ['20092274','PAPEL FS HIG. ECONOCLEAN 18,5G 10X300X08',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092276','HFSX165 W N BR 30X04X16X64 NE NINO',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092383','GUARDANAPO SCALA 22X20 - CX 4800 UN',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092384','GUARDANAPO SCALA 22X20 - 3600 UN',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092386','GUARDANAPO NAPS 23X21,5 - 3600 UN',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092388','GUARDAPANO NAPS 33X30 - 1800 UN',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092389','PAPEL TOALHA INT. ECO 24G 21,5X21X1250',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092390','PAPEL TOALHA INT. ECO 24G 21,5X21X2400',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092392','PAPEL TOALHA ECONOCLEAN 24G 20x100x08',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092393','PAPEL TOALHA ECONOCLEAN 24G 20x200x06',{1063:0,1064:0,6300:0,2100:0}],
-  ['20092395','PAPEL TOALHA FD 02X12 SCALA',{1063:0,1064:0,6300:0,2100:0}],
-  ['20095269','HFDX142 W C BR 30x16x04x64 NE FOFOPEL',{1063:54,1064:0,6300:60,2100:0}],
-  ['20097397','HFTX151 W N BR 20x12x06x72 NE MIMMO',{1063:45,1064:40,6300:50,2100:45}],
-  ['20097399','HFTX151 W N BR 20x24x03x72 NE MIMMO',{1063:36,1064:42,6300:49,2100:30}],
-  ['20099823','HFSX190 W C BR 30x08x08x64 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
-  ['20101657','FRALDA DESC MAXX BABY REGULAR G 24x7',{1063:0,1064:0,6300:0,2100:0}],
-  ['20101659','FRALDA DESC MAXX BABY REGULAR EG 24x7',{1063:0,1064:0,6300:0,2100:0}],
-  ['20101660','FRALDA DESC MAXX BABY MEGA M 8x40',{1063:0,1064:0,6300:0,2100:0}],
-  ['20101661','FRALDA DESC MAXX BABY MEGA G 8x36',{1063:0,1064:0,6300:0,2100:0}],
-  ['20101662','FRALDA DESC MAXX BABY MEGA EG 8x30',{1063:0,1064:0,6300:0,2100:0}],
-  ['20101724','FRALDA DESC MAXX BABY REGULAR M 24x8',{1063:0,1064:0,6300:0,2100:0}],
-  ['20102946','HFSX190 W C BR 30x08x10x80 NE FLORAL',{1063:0,1064:0,6300:0,2100:0}],
-  ['20103075','HFDX147 W N BR 40x06x10x60 NE MIMMO',{1063:54,1064:60,6300:60,2100:54}],
-  ['20103543','HFDX139 W C BR 30x16x04x64 NE DIA',{1063:0,1064:0,6300:0,2100:0}],
-  ['20103568','HFDX139 W C BR 30x12x06x72 NE DIA',{1063:0,1064:0,6300:0,2100:0}],
-  ['20103677','HFDX142 W N BR 40x06x10x60 NE MAX PURE',{1063:54,1064:60,6300:60,2100:54}],
-  ['20104309','LENCO FAC KLEENEX BLS FT 10X04X72 L4P3',{1063:60,1064:60,6300:60,2100:48}],
-  ['20104310','LENCO FAC KLEENEX BLS FT 10X12X48 UNIT',{1063:250,1064:300,6300:300,2100:0}],
-  ['20104311','PANO SCOTT DURAMAX 48X01X12 ANTIBAC',{1063:88,1064:60,6300:60,2100:0}],
-  ['20104312','PANO SCOTT DURAMAX 58X01X24 AZUL',{1063:48,1064:60,6300:60,2100:48}],
-  ['20104313','PANO SCOTT DURAMAX 58X01X24 BRANCO',{1063:48,1064:60,6300:60,2100:48}],
-  ['20104404','HFDX153 W N BR 20x04x12x48 NEVE T.SEDA',{1063:72,1064:80,6300:80,2100:0}],
-  ['20104405','HFDX153 W C BR 20x12x05x60 NEVE T.SEDA',{1063:60,1064:60,6300:72,2100:60}],
-  ['20104407','HFDX153 W C BR 20x18x04x72 NEVE T.SEDA',{1063:60,1064:48,6300:48,2100:60}],
-  ['20104408','HFDX153 W N BR 30x04x16x64 NEVE T.SEDA',{1063:54,1064:60,6300:60,2100:54}],
-  ['20104409','HFDX153 W C BR 30x12x06x72 NEVE T.SEDA',{1063:45,1064:50,6300:50,2100:45}],
-  ['20104410','HFDX153 W C BR 30x16x04x64 NEVE T.SEDA',{1063:54,1064:60,6300:60,2100:54}],
-  ['20104411','HFDX153 W C BR 30x18x04x72 NEVE T.SEDA',{1063:45,1064:36,6300:36,2100:0}],
-  ['20104412','HFDX153 W C BR 30x24x03x72 NEVE T.SEDA',{1063:42,1064:49,6300:49,2100:42}],
-  ['20104413','HFDX153 W C BR 30x32x02x64 NEVE T.SEDA',{1063:44,1064:55,6300:0,2100:0}],
-  ['20104414','HFTX153 W N BR 20x04x16x64 NEVE SUP.',{1063:54,1064:60,6300:60,2100:54}],
-  ['20104415','HFTX153 W C BR 20x12x06x72 NEVE SUP.',{1063:45,1064:50,6300:50,2100:45}],
-  ['20104416','HFTX153 W C BR 20x16x04x64 NEVE SUP.',{1063:54,1064:60,6300:60,2100:54}],
-  ['20104417','HFTX153 W C BR 20x18x04x72 NEVE SUP.',{1063:45,1064:36,6300:36,2100:0}],
-  ['20104418','HFTX153 W C BR 20x24x03x72 NEVE SUP.',{1063:42,1064:49,6300:49,2100:42}],
-  ['20104419','HFTX153 W C BR 20x32x02x64 NEVE SUP.',{1063:36,1064:0,6300:0,2100:0}],
-  ['20104420','LENCO FAC KLEENEX BX FD 50X50',{1063:63,1064:99,6300:99,2100:0}],
-  ['20104421','LENCO FAC KLEENEX BX FD 50X60 L60P50',{1063:63,1064:90,6300:90,2100:90}],
-  ['20104422','LENCO FAC KLEENEX BX FD 100X40 L100P80',{1063:56,1064:80,6300:80,2100:48}],
-  ['20104423','LENCO FAC KLEENEX BX FD 150X32 LMPN',{1063:54,1064:60,6300:60,2100:0}],
-  ['20104424','PANO SCOTT DURAMAX 58X02X12 BRANCO',{1063:48,1064:60,6300:60,2100:0}],
-  ['20104425','PANO SCOTT DURAMAX 58X03X08 BRANCO',{1063:48,1064:60,6300:60,2100:48}],
-  ['20104426','GUARD. SCOTT DIA A DIA FS 6X12X50 P',{1063:40,1064:45,6300:45,2100:32}],
-  ['20104427','GUARD. SCOTT DIA A DIA FS 6X12X50 G',{1063:24,1064:24,6300:24,2100:0}],
-  ['20104429','GUARD. SCOTT GRANDHOTEL FD 9X9X50 P',{1063:40,1064:45,6300:45,2100:55}],
-  ['20104430','GUARD. SCOTT GRANDHOTEL FD 8X9X50 G',{1063:25,1064:25,6300:25,2100:0}],
-  ['20105125','PAPEL TOALHA FD 02X12 SCALA MULTIPICOTE',{1063:0,1064:0,6300:0,2100:0}],
-  ['20105126','PAPEL TOALHA FD 03X06 SCALA MEGA',{1063:0,1064:0,6300:0,2100:0}],
-  ['20105277','HFDX153 W N BR 30x40x02x80 NEVE T.SEDA',{1063:36,1064:0,6300:0,2100:0}],
-  ['20106005','HFDX153 W C BR 40x06x10x60 NEVE T.SEDA',{1063:54,1064:60,6300:60,2100:0}],
-  ['20106196','HFDX142 W C BR 20x12x06x72 NE USUAL',{1063:0,1064:0,6300:0,2100:0}],
-  ['20106204','HFDX142 W C BR 20x12x06x72 NE FLORAL',{1063:0,1064:50,6300:60,2100:45}],
-  ['20106294','PAP HIG FD MAX PURE COMPACTO NEUTRO 30M',{1063:0,1064:0,6300:0,2100:0}],
-  ['20106704','HFQX145 W C BR 20x12x04X48 NEVE UCOMFORT',{1063:54,1064:60,6300:60,2100:45}],
-  ['20106705','HFQX145 W N BR 20x04x12x48 NEVE UCOMFORT',{1063:54,1064:0,6300:60,2100:0}],
-  ['20107570','HFDX142 W C BR 30x12x06x72 NE ZEEP',{1063:0,1064:0,6300:0,2100:0}],
-  ['20108365','LENCO FAC MIMMO BLS FT 08X06X72',{1063:36,1064:64,6300:64,2100:48}],
-  ['20108495','HFDX142 W C BR 30x12x06x72 NE ECONOBOM',{1063:0,1064:0,6300:50,2100:45}],
-  ['20108497','HFDX142 W C BR 30x24x03x72 NE ECONOBOM',{1063:0,1064:0,6300:0,2100:42}],
-  ['20108498','HFDX142 W C BR 30x32x02x64 NE ECONOBOM',{1063:0,1064:0,6300:0,2100:44}],
-  ['20109126','HFDX142 W C BR 30x12x06x72 NE F&C FAMILY',{1063:0,1064:0,6300:0,2100:0}],
-  ['20109128','HFDX142 W C BR 30x16x04x64 NE F&C FAMILY',{1063:0,1064:0,6300:0,2100:0}],
-  ['20109594','LENCO FAC MIMMO BX FD 100X40',{1063:56,1064:80,6300:80,2100:40}],
-  ['20109628','HFDX147 W C BR 30x08x08x64 NE MIMMO',{1063:0,1064:0,6300:0,2100:0}],
-  ['20109727','HFQX145 W C BR 20x24x03X72 NEVE UCOMFORT',{1063:0,1064:0,6300:0,2100:0}],
-  ['20109735','HFTX153 W C BR 20x12x04x48 NEVE TQ ONDAS',{1063:36,1064:60,6300:36,2100:0}],
-  ['20109736','HFTX153 W C BR 20X06X10X60 NEVE TQ ONDAS',{1063:36,1064:0,6300:0,2100:0}],
-  ['20110078','PANO SCALA 50X01X24 BRANCO',{1063:0,1064:0,6300:0,2100:0}],
-  ['20110570','GUARD. SCALA FS 6X12X50 P',{1063:0,1064:0,6300:0,2100:32}],
-  ['20111062','TFTX205 2R 100F 3X6 GRAND HOTEL WARM UP',{1063:0,1064:0,6300:0,2100:0}],
-  ['20111095','HFDX147 W N BR 40x12x06x72 NE MIMMO',{1063:0,1064:35,6300:0,2100:36}],
-  ['20111425','HFDX147 W C BR 30x12x06x72 MIMMO DECORAD',{1063:0,1064:0,6300:0,2100:45}],
-  ['21067158','HFDX142 W C BR 30x40x02x80 NE MAX EXP',{1063:0,1064:45,6300:45,2100:0}],
-  ['21068566','TOAX430 3R 120F 3X6 SCALA PLUS MEGA EXP',{1063:0,1064:0,6300:0,2100:0}],
-  ['30241465','HFDX147 W C BR 30x12x06x72 NE MIMMO',{1063:0,1064:50,6300:0,2100:0}],
-  ['30241471','HFDX147 W N BR 30x04x16x64 NE MIMMO',{1063:54,1064:0,6300:0,2100:0}],
-  ['30242383','GUARDANAPO SCALA 22X20 - CX 4800 UN',{1063:0,1064:0,6300:0,2100:0}],
-  ['30242389','PAPEL TOALHA INT. ECO 24G 21,5X21X1250',{1063:0,1064:0,6300:0,2100:0}],
-  ['90004480','LENÇO UMEDECIDO MIMMO 40x2',{1063:0,1064:48,6300:48,2100:0}],
-  ['90004710','LENÇO UMEDECIDO MIMMO 40x24',{1063:95,1064:48,6300:48,2100:48}],
-  ['90004852','LENCO UMED. NEVE SUPREME 48X24',{1063:75,1064:84,6300:84,2100:0}],
-  ['90004853','LENCO UMED. NEVE TOQ SEDA 48X24',{1063:75,1064:70,6300:70,2100:48}],
-  ['90004854','LENCO UMED. NEVE TOQSEDA 48X4X6 L4P3',{1063:75,1064:75,6300:75,2100:0}],
-  ['90005082','LENCO UMED. NEVE ON THE GO 16X24',{1063:160,1064:50,6300:140,2100:0}],
-];
+// Dados carregados de paletizacao.js
+
+// Atualiza o dropdown de filtro de centros dinamicamente
+function updateCentroFilter(centrosCodes) {
+  const selectEl = document.getElementById('palet-centro-filter');
+  if (!selectEl) return;
+  
+  // Limpa options atuais
+  selectEl.innerHTML = '';
+  
+  // Adiciona options para cada centro detectado
+  centrosCodes.forEach(codigo => {
+    const option = document.createElement('option');
+    option.value = codigo;
+    option.textContent = codigo;
+    selectEl.appendChild(option);
+  });
+}
 
 function renderPaletTable(data) {
   const tbody = document.getElementById('palet-tbody');
@@ -2128,30 +2058,29 @@ function renderPaletTable(data) {
   const selectEl = document.getElementById('palet-centro-filter');
   const selectedCentros = Array.from(selectEl.selectedOptions).map(opt => opt.value);
   
-  // Map centro code to name
-  const centroNames = { '1063': 'Cariacica', '1064': 'Cachoeiro', '6300': 'Aracruz', '2100': 'Mucuri' };
-  
   // Update header based on selection
   if (selectedCentros.length === 0) {
-    // No centro selected - show only Material and Produto
-    thead.innerHTML = `<th>Material</th><th>Produto</th>`;
-    tbody.innerHTML = data.map(([mat, prod]) => `
+    // No centro selected - show Material, Produto, and Família
+    thead.innerHTML = `<th>Material</th><th>Produto</th><th>Família</th>`;
+    tbody.innerHTML = data.map(([mat, prod, familia]) => `
       <tr>
         <td>${escHtml(mat)}</td>
         <td>${escHtml(prod)}</td>
+        <td>${escHtml(familia)}</td>
       </tr>
     `).join('');
   } else {
-    // Show selected centros
-    const headerCols = selectedCentros.map(c => `<th>${centroNames[c]}</th>`).join('');
-    thead.innerHTML = `<th>Material</th><th>Produto</th>${headerCols}`;
+    // Show selected centros (use code as header)
+    const headerCols = selectedCentros.map(c => `<th>${c}</th>`).join('');
+    thead.innerHTML = `<th>Material</th><th>Produto</th><th>Família</th>${headerCols}`;
     
-    tbody.innerHTML = data.map(([mat, prod, centros]) => {
+    tbody.innerHTML = data.map(([mat, prod, familia, centros]) => {
       const dataCols = selectedCentros.map(c => `<td>${centros[c] || 0}</td>`).join('');
       return `
         <tr>
           <td>${escHtml(mat)}</td>
           <td>${escHtml(prod)}</td>
+          <td>${escHtml(familia)}</td>
           ${dataCols}
         </tr>
       `;
@@ -2174,7 +2103,7 @@ function filterPalet() {
   
   // If centros selected, filter products that have paletização > 0 in ANY selected centro
   if (selectedCentros.length > 0) {
-    result = result.filter(([,,centros]) => 
+    result = result.filter(([,,,centros]) => 
       selectedCentros.some(c => (centros[c] || 0) > 0)
     );
   }
@@ -2185,7 +2114,6 @@ function filterPalet() {
 function exportarPaletExcel() {
   const selectEl = document.getElementById('palet-centro-filter');
   const selectedCentros = Array.from(selectEl.selectedOptions).map(opt => opt.value);
-  const centroNames = { '1063': 'Cariacica', '1064': 'Cachoeiro', '6300': 'Aracruz', '2100': 'Mucuri' };
   
   // Get filtered data
   const q = document.getElementById('palet-search').value.toLowerCase();
@@ -2195,25 +2123,32 @@ function exportarPaletExcel() {
     : PALET_DATA;
   
   if (selectedCentros.length > 0) {
-    data = data.filter(([,,centros]) => 
+    data = data.filter(([,,,centros]) => 
       selectedCentros.some(c => (centros[c] || 0) > 0)
     );
   }
   
+  // Get all unique centro codes from data
+  const allCentros = new Set();
+  PALET_DATA.forEach(([,,,centros]) => {
+    Object.keys(centros).forEach(c => allCentros.add(c));
+  });
+  const allCentrosCodes = Array.from(allCentros).sort();
+  
   // Build worksheet data
-  const headers = ['Material', 'Produto'];
+  const headers = ['Material', 'Produto', 'Família'];
   if (selectedCentros.length > 0) {
-    headers.push(...selectedCentros.map(c => centroNames[c]));
+    headers.push(...selectedCentros);
   } else {
-    headers.push('Cariacica', 'Cachoeiro', 'Aracruz', 'Mucuri');
+    headers.push(...allCentrosCodes);
   }
   
-  const rows = data.map(([mat, prod, centros]) => {
-    const row = [mat, prod];
+  const rows = data.map(([mat, prod, familia, centros]) => {
+    const row = [mat, prod, familia];
     if (selectedCentros.length > 0) {
       row.push(...selectedCentros.map(c => centros[c] || 0));
     } else {
-      row.push(centros[1063] || 0, centros[1064] || 0, centros[6300] || 0, centros[2100] || 0);
+      row.push(...allCentrosCodes.map(c => centros[c] || 0));
     }
     return row;
   });
@@ -2312,7 +2247,7 @@ function exportarExcel() {
     { key: 'material',           label: 'Material' },
     { key: 'denominacao',        label: 'Denominação' },
     { key: 'pesoLiquido',        label: 'Peso (t)' },
-    { key: 'volumeAcumulado',    label: 'Cubagem do Veículo' },
+    { key: 'volumeAcumulado',    label: 'Cubagem da DT' },
     { key: 'qtdeRemessa',        label: 'Pedido Fardos/Caixas' },
     { key: 'nomeCliente',        label: 'Cliente' },
     { key: 'nomeMotorista',      label: 'Motorista' },
@@ -2343,19 +2278,23 @@ function exportarExcel() {
 function gerarInspecao(d) {
   const centro = String(d.centro).trim();
   const paletMap = new Map();
-  PALET_DATA.forEach(([mat,,centros]) => {
+  const familiaMap = new Map();
+  PALET_DATA.forEach(([mat, prod, familia, centros]) => {
     const s = String(mat).trim();
     const pal = centros[centro] ?? centros[String(parseInt(centro, 10))] ?? 0;
     paletMap.set(s, pal);
     paletMap.set(String(parseInt(s, 10)), pal);
+    familiaMap.set(s, familia || '');
+    familiaMap.set(String(parseInt(s, 10)), familia || '');
   });
 
   const items = d.materials
     .map(({ mat, qtde }) => {
       const matStr  = String(parseInt(String(mat).trim(), 10)) || String(mat).trim();
       const pal     = paletMap.get(String(mat).trim()) || paletMap.get(matStr) || null;
+      const familia = familiaMap.get(String(mat).trim()) || familiaMap.get(matStr) || '';
       const fechados = (pal && pal > 0) ? Math.floor(qtde / pal) : 0;
-      return { mat: matStr, qtde, pal, fechados };
+      return { mat: matStr, qtde, pal, fechados, familia };
     })
     .filter(r => r.fechados > 0)
     .sort((a, b) => b.fechados - a.fechados);
@@ -2368,12 +2307,13 @@ function gerarInspecao(d) {
   const remessaStr   = d.remessas.join(', ') || '—';
   const remessaCount = d.remessas.length;
 
-  const blocksHtml = items.map(({ mat, fechados }) => {
+  const blocksHtml = items.map(({ mat, fechados, familia }) => {
     const paletes = Array(fechados).fill('📦').join('');
     return `
       <div class="ins-block">
         <div class="ins-paletes">${paletes}</div>
         <div class="ins-mat">${mat}</div>
+        <div class="ins-familia">${familia}</div>
         <div class="ins-info">${fechados} palete${fechados > 1 ? 's' : ''}</div>
       </div>`;
   }).join('');
@@ -2460,18 +2400,27 @@ function gerarRomaneio(d) {
   // paletMap considerando o centro do embarque
   const centro = String(d.centro).trim();
   const paletMap = new Map();
-  PALET_DATA.forEach(([mat,,centros]) => {
+  const familiaMap = new Map();
+  PALET_DATA.forEach(([mat, prod, familia, centros]) => {
     const s = String(mat).trim();
     const n = String(parseInt(s, 10));
     const pal = centros[centro] ?? centros[String(parseInt(centro, 10))] ?? 0;
     paletMap.set(s, pal);
     paletMap.set(n, pal);
+    familiaMap.set(s, familia || '');
+    familiaMap.set(n, familia || '');
   });
 
   function getPal(mat) {
     const s = String(mat).trim().replace(/\.0+$/, '');
     const n = String(parseInt(s, 10));
     return paletMap.get(s) ?? paletMap.get(n) ?? null;
+  }
+
+  function getFamilia(mat) {
+    const s = String(mat).trim().replace(/\.0+$/, '');
+    const n = String(parseInt(s, 10));
+    return familiaMap.get(s) ?? familiaMap.get(n) ?? '';
   }
 
   // totalQtde do CEP (soma dos materiais deste CEP)
@@ -2481,9 +2430,10 @@ function gerarRomaneio(d) {
   const tableRows = d.materials.map(({ mat, denom, qtde }) => {
     const matStr   = String(parseInt(String(mat).trim(), 10)) || String(mat).trim();
     const pal      = getPal(mat);
+    const familia  = getFamilia(mat);
     const fechados = (pal !== null && pal > 0) ? Math.floor(qtde / pal) : 0;
     const fracoes  = (pal !== null && pal > 0) ? (qtde % pal)           : qtde;
-    return { mat: matStr, denom, qtde, fechados, fracoes };
+    return { mat: matStr, denom, qtde, fechados, fracoes, familia };
   });
 
   const remessaStr   = d.remessas.join(', ') || '—';
@@ -2541,6 +2491,7 @@ function gerarRomaneio(d) {
         <tr>
           <th class="col-mat">Material</th>
           <th class="col-denom">Produto (Denominação)</th>
+          <th class="col-familia">Família</th>
           <th class="col-num">Qtde</th>
           <th class="col-num">Paletes Fechados</th>
           <th class="col-num">Frações</th>
@@ -2565,6 +2516,7 @@ function gerarRomaneio(d) {
       <tr>
         <td class="col-mat">${escHtml(r.mat)}</td>
         <td class="col-denom">${escHtml(r.denom)}</td>
+        <td class="col-familia">${escHtml(r.familia)}</td>
         <td class="rom-center">${r.qtde.toLocaleString('pt-BR')}</td>
         <td class="rom-center">${r.fechados}</td>
         <td class="rom-center">${r.fracoes}</td>
@@ -2578,6 +2530,12 @@ function gerarRomaneio(d) {
           <div style="display:flex;flex-direction:column;flex:1;border-right:1px solid #000;">
             <div class="rom-obs-title">Observações</div>
             <div class="rom-obs-body"></div>
+          </div>
+          <div class="rom-separador">
+            <div class="rom-separador-title">Separador</div>
+            <div class="rom-separador-body">
+              <div class="rom-separador-line"></div>
+            </div>
           </div>
           <div class="rom-entrega">
             <div class="rom-entrega-title">Ordem de Carregamento</div>
@@ -2722,7 +2680,7 @@ function renderIndicadores() {
   // Pega centro da primeira linha do arquivo
   const centro = String(getVal(rawDataRows[0], 'centro') || '').trim();
   const paletMap = new Map();
-  PALET_DATA.forEach(([mat,,centros]) => {
+  PALET_DATA.forEach(([mat,,,centros]) => {
     const s = String(mat).trim();
     const pal = centros[centro] ?? centros[String(parseInt(centro, 10))] ?? 0;
     paletMap.set(s, pal);
